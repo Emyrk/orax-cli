@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	lxr "github.com/pegnet/LXR256"
-	"github.com/pegnet/OracleRecord/orax"
+	"gitlab.com/pbernier3/orax-cli/orax"
 )
 
 var LX lxr.LXRHash
