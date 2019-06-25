@@ -1,13 +1,19 @@
-package orax
+package mining
 
 import (
+	"sort"
 	"sync"
 	"time"
 
-	"github.com/pegnet/LXR256"
+	_log "gitlab.com/pbernier3/orax-cli/log"
+
+	lxr "github.com/pegnet/LXR256"
 )
 
-var LX lxr.LXRHash
+var (
+	LX  lxr.LXRHash
+	log = _log.New("mining")
+)
 
 type SuperMiner struct {
 	running       bool
@@ -22,18 +28,18 @@ type MiningSession struct {
 	EndTime           time.Time
 	Duration          time.Duration
 	TotalOps          uint64
-	OrderedBestHashes []Hash
+	OrderedBestNonces []Nonce
 }
 
-func NewSuperMiner(nbMiners int, maxBestHashes int) *SuperMiner {
-	LX.Init(0x123412341234, 25, 256, 5)
+func NewSuperMiner(nbMiners int) *SuperMiner {
+	LX.Init(0xfafaececfafaecec, 25, 256, 5)
 
 	superMiner := new(SuperMiner)
 	miners := make([]*Miner, nbMiners, nbMiners)
 	superMiner.miners = miners
 
 	for i := 0; i < nbMiners; i++ {
-		miners[i] = NewMiner(i, maxBestHashes, &LX)
+		miners[i] = NewMiner(i, &LX)
 	}
 
 	return superMiner
@@ -41,8 +47,10 @@ func NewSuperMiner(nbMiners int, maxBestHashes int) *SuperMiner {
 
 func (sm *SuperMiner) Mine(oprHash []byte) {
 	if sm.running {
-		panic("Tried to run an already running miner")
+		log.Fatal("Tried to run an already running miner")
 	}
+
+	log.Infof("Starting mining with [%d] sub-miners: %x", len(sm.miners), oprHash)
 
 	sm.running = true
 
@@ -52,6 +60,7 @@ func (sm *SuperMiner) Mine(oprHash []byte) {
 
 	wg := new(sync.WaitGroup)
 	for i := 0; i < len(sm.miners); i++ {
+		sm.miners[i].Reset()
 		wg.Add(1)
 		go sm.miners[i].mine(oprHash, wg)
 	}
@@ -60,8 +69,9 @@ func (sm *SuperMiner) Mine(oprHash []byte) {
 
 func (sm *SuperMiner) Stop() MiningSession {
 	if !sm.running {
-		panic("Tried to stop non-running miner")
+		log.Fatal("Tried to stop non-running miner")
 	}
+	log.Info("Stopping mining")
 
 	for i := 0; i < len(sm.miners); i++ {
 		sm.miners[i].stop <- 1
@@ -72,22 +82,32 @@ func (sm *SuperMiner) Stop() MiningSession {
 	sm.miningSession.EndTime = time.Now()
 	sm.miningSession.Duration = sm.miningSession.EndTime.Sub(sm.miningSession.StartTime)
 
-	totalOps, orderedBestHashes := sm.computeMiningSessionResult()
+	totalOps, orderedBestNonces := sm.computeMiningSessionResult()
 	sm.miningSession.TotalOps = totalOps
-	sm.miningSession.OrderedBestHashes = orderedBestHashes
+	sm.miningSession.OrderedBestNonces = orderedBestNonces
 
 	return *sm.miningSession
 }
 
-func (sm *SuperMiner) computeMiningSessionResult() (uint64, []Hash) {
+func (sm *SuperMiner) computeMiningSessionResult() (uint64, []Nonce) {
 
 	totalOps := uint64(0)
-	var bestHashes []Hash
+	var bestNonces []Nonce
 	for i := 0; i < len(sm.miners); i++ {
 		totalOps += sm.miners[i].opsCounter
-		bestHashes = append(bestHashes, sm.miners[i].bestHashes.diffOrderedHashes...)
+		bestNonces = append(bestNonces, *sm.miners[i].bestNonce)
 	}
-	sortHashesByDiff(bestHashes)
+	sortNoncesByDiff(bestNonces)
 
-	return totalOps, bestHashes
+	return totalOps, bestNonces
+}
+
+func sortNoncesByDiff(nonces []Nonce) {
+	sort.Slice(nonces, func(i, j int) bool {
+		return nonces[i].Difficulty < nonces[j].Difficulty
+	})
+}
+
+func (sm *SuperMiner) IsRunning() bool {
+	return sm.running
 }
