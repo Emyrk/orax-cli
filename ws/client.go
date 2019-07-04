@@ -19,9 +19,9 @@ func exponentialBackOff() *backoff.ExponentialBackOff {
 	b := &backoff.ExponentialBackOff{
 		InitialInterval:     500 * time.Millisecond,
 		RandomizationFactor: 0.5,
-		Multiplier:          1.5,
-		MaxInterval:         10 * time.Second,
-		MaxElapsedTime:      10 * time.Minute,
+		Multiplier:          2,
+		MaxInterval:         15 * time.Second,
+		MaxElapsedTime:      30 * time.Minute,
 		Clock:               backoff.SystemClock,
 	}
 	b.Reset()
@@ -41,7 +41,8 @@ var u = url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/miner"}
 func (cli *Client) connect() {
 	log.Infof("Connecting to Orax as [%s]...", cli.id)
 
-	err := backoff.Retry(func() error {
+	expBackOff := exponentialBackOff()
+	err := backoff.RetryNotify(func() error {
 		m := http.Header{"Authorization": []string{cli.id}}
 		d := websocket.Dialer{
 			Proxy:             http.ProxyFromEnvironment,
@@ -50,10 +51,12 @@ func (cli *Client) connect() {
 		c, _, err := d.Dial(u.String(), m)
 		cli.conn = c
 		return err
-	}, exponentialBackOff())
+	}, expBackOff, func(err error, duration time.Duration) {
+		log.Warnf("Failed to connected. Retrying in %s", duration)
+	})
 
 	if err != nil {
-		log.Fatal("dial:", err)
+		log.Fatalf("Failed to connect after retrying for over %s", expBackOff.MaxElapsedTime)
 	}
 
 	log.Info("Connected to Orax orchestrator")
@@ -61,11 +64,11 @@ func (cli *Client) connect() {
 
 func (cli *Client) Start(id string) {
 	cli.id = id
-	cli.connect()
-
 	cli.stop = make(chan struct{})
 	cli.done = make(chan struct{})
 	cli.Received = make(chan []byte, 256)
+
+	cli.connect()
 
 	go cli.read()
 
