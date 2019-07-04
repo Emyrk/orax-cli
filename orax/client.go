@@ -72,7 +72,7 @@ func (cli *Client) stop() {
 }
 
 func (cli *Client) listenSignals() {
-	log.Info("Listening to orchestrator signals")
+	log.Info("Listening to Orax orchestrator signals")
 	for {
 		received, ok := <-cli.wscli.Received
 		if !ok {
