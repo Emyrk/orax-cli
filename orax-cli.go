@@ -2,12 +2,9 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
-	"time"
 
 	_log "gitlab.com/pbernier3/orax-cli/log"
 	"gitlab.com/pbernier3/orax-cli/orax"
@@ -23,20 +20,38 @@ var (
 	log = _log.New("main")
 )
 
-func main() {
+func main() { os.Exit(_main()) }
+
+func _main() int {
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	stopOraxCli := make(chan struct{})
 	oraxCli := new(orax.Client)
-	source := rand.NewSource(time.Now().UnixNano())
-	rd := rand.New(source)
-	id := strconv.Itoa(rd.Intn(100))
-	oraxCli.Start("miner-" + id)
+	oraxCliDone := oraxCli.Start(stopOraxCli)
 
-	sig := <-sigs
-	log.Infof("[%s signal] Stopping Orax client... ", sig)
-	oraxCli.Stop()
+	if oraxCliDone == nil {
+		return 1
+	}
+
+	defer func() {
+		close(stopOraxCli) // Stop orax cli.
+		log.Info("Waiting for Orax cli to stop...")
+		<-oraxCliDone // Wait for orax cli to stop.
+		log.Info("Orax cli stopped.")
+	}()
+
+	defer signal.Reset()
+	// Wait for interrupt signal or unexpected termination of orax cli
+	select {
+	case sig := <-sigs:
+		log.Infof("%s signal received. Shutting down.", sig)
+		return 0
+	case <-oraxCliDone: // Closed if Orax cli exits prematurely.
+	}
+
+	return 1
 
 	// oprHash := make([]byte, 32)
 	// src := rand.NewSource(time.Now().UnixNano())

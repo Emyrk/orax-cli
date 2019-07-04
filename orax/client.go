@@ -1,8 +1,11 @@
 package orax
 
 import (
+	"math/rand"
 	"runtime"
+	"strconv"
 	"sync"
+	"time"
 
 	_log "gitlab.com/pbernier3/orax-cli/log"
 	"gitlab.com/pbernier3/orax-cli/msg"
@@ -20,16 +23,35 @@ type Client struct {
 	miner *mining.SuperMiner
 }
 
-func (cli *Client) Start(id string) {
+func (cli *Client) Start(stop <-chan struct{}) <-chan struct{} {
+	done := make(chan struct{})
+	source := rand.NewSource(time.Now().UnixNano())
+	rd := rand.New(source)
+	id := strconv.Itoa(rd.Intn(100))
+
+	// Initialize super miner
+	nbMiners := runtime.NumCPU()
+	cli.miner = mining.NewSuperMiner(nbMiners)
+
+	// Initialize and start Websocket client
 	cli.wscli = new(ws.Client)
 	go cli.wscli.Start(id)
 
-	nbMiners := runtime.NumCPU()
-	cli.miner = mining.NewSuperMiner(nbMiners)
 	go cli.listenSignals()
+
+	go func() {
+		select {
+		case <-stop:
+			cli.stop()
+			close(done)
+		case <-done:
+		}
+	}()
+
+	return done
 }
 
-func (cli *Client) Stop() {
+func (cli *Client) stop() {
 	wg := new(sync.WaitGroup)
 
 	wg.Add(1)
@@ -50,7 +72,7 @@ func (cli *Client) Stop() {
 }
 
 func (cli *Client) listenSignals() {
-	log.Info("Listening to signals")
+	log.Info("Listening to orchestrator signals")
 	for {
 		received, ok := <-cli.wscli.Received
 		if !ok {
@@ -59,12 +81,16 @@ func (cli *Client) listenSignals() {
 
 		message, err := msg.UnmarshalMessage(received)
 		if err != nil {
-			log.Warn("Failed to unmarshal message", err)
+			log.Warn("Failed to unmarshal message: ", err)
 			continue
 		}
 
 		switch v := message.(type) {
 		case *msg.MineSignalMessage:
+			if cli.miner.IsRunning() {
+				log.Warn("Stopping a stalled mining session")
+				cli.miner.Stop()
+			}
 			cli.miner.Mine(v.OprHash)
 		case *msg.SubmitSignalMessage:
 			if cli.miner.IsRunning() {
