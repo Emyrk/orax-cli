@@ -4,12 +4,13 @@ import (
 	"encoding/binary"
 	"errors"
 
-	_log "gitlab.com/pbernier3/orax-cli/log"
+	"gitlab.com/pbernier3/orax-cli/common"
 )
 
 const CurrentVersion = 0
 
-var log = _log.New("message")
+var log = common.GetLog()
+
 
 type MessageType = uint8
 

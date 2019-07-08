@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	_log "gitlab.com/pbernier3/orax-cli/log"
+	"gitlab.com/pbernier3/orax-cli/common"
 	"gitlab.com/pbernier3/orax-cli/mining"
 
 	"github.com/spf13/cobra"
@@ -26,7 +26,7 @@ func init() {
 }
 
 func bench() {
-	log := _log.New("bench")
+	log := common.GetLog()
 
 	oprHash := make([]byte, 32)
 	rand.Read(oprHash)

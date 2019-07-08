@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	_log "gitlab.com/pbernier3/orax-cli/log"
+	"gitlab.com/pbernier3/orax-cli/common"
 
 	"github.com/spf13/cobra"
 	"gitlab.com/pbernier3/orax-cli/orax"
@@ -24,7 +24,7 @@ var mineCmd = &cobra.Command{
 }
 
 func _main() int {
-	log := _log.New("mine")
+	log := common.GetLog()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -48,7 +48,7 @@ func _main() int {
 	// Wait for interrupt signal or unexpected termination of orax cli
 	select {
 	case sig := <-sigs:
-		log.Infof("%s signal received. Shutting down.", sig)
+		log.WithField("signal", sig).Info("Interrupt signal received. Shutting down.")
 		return 0
 	case <-oraxCliDone: // Closed if Orax cli exits prematurely.
 	}

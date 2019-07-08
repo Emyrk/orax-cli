@@ -5,14 +5,15 @@ import (
 	"sync"
 	"time"
 
-	_log "gitlab.com/pbernier3/orax-cli/log"
+	"gitlab.com/pbernier3/orax-cli/common"
 
 	lxr "github.com/pegnet/LXR256"
+	"github.com/sirupsen/logrus"
 )
 
 var (
 	LX  lxr.LXRHash
-	log = _log.New("mining")
+	log = common.GetLog()
 )
 
 type SuperMiner struct {
@@ -50,7 +51,10 @@ func (sm *SuperMiner) Mine(oprHash []byte) {
 		log.Fatal("Tried to run an already running miner")
 	}
 
-	log.Infof("Starting mining with [%d] sub-miners: %x", len(sm.miners), oprHash)
+	log.WithFields(logrus.Fields{
+		"nbSubMiners": len(sm.miners),
+		"oprHash":     oprHash,
+	}).Infof("Starting mining")
 
 	sm.running = true
 

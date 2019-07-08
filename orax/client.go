@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"github.com/sirupsen/logrus"
 
-	_log "gitlab.com/pbernier3/orax-cli/log"
+	"gitlab.com/pbernier3/orax-cli/common"
 	"gitlab.com/pbernier3/orax-cli/msg"
 
 	"gitlab.com/pbernier3/orax-cli/mining"
@@ -15,7 +16,7 @@ import (
 )
 
 var (
-	log = _log.New("orax")
+	log	= common.GetLog()
 )
 
 type Client struct {
@@ -101,8 +102,12 @@ func (cli *Client) listenSignals() {
 				msm.Difficulty = ms.OrderedBestNonces[len(ms.OrderedBestNonces)-1].Difficulty
 				msm.HashRate = uint64(float64(ms.TotalOps) / ms.Duration.Seconds())
 
-				log.Infof("Submitting nonce [%x] for opr hash [%x] with difficult [%d].\nHashrate: [%d]",
-					msm.Nonce, msm.OprHash, msm.Difficulty, msm.HashRate)
+				log.WithFields(logrus.Fields{
+					"nonce":      msm.Nonce,
+					"oprHash":    msm.OprHash,
+					"difficulty": msm.Difficulty,
+					"hashRate":   msm.HashRate,
+				}).Infof("Submitting mining result")
 
 				cli.wscli.Send(msm.Marshal())
 			}

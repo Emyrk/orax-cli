@@ -5,14 +5,14 @@ import (
 	"net/url"
 	"time"
 
-	_log "gitlab.com/pbernier3/orax-cli/log"
+	"gitlab.com/pbernier3/orax-cli/common"
 
 	"github.com/cenkalti/backoff"
 	"github.com/gorilla/websocket"
 )
 
 var (
-	log = _log.New("ws")
+	log = common.GetLog()
 )
 
 func exponentialBackOff() *backoff.ExponentialBackOff {
