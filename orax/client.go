@@ -1,11 +1,9 @@
 package orax
 
 import (
-	"math/rand"
 	"runtime"
-	"strconv"
 	"sync"
-	"time"
+
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/pbernier3/orax-cli/common"
@@ -16,7 +14,7 @@ import (
 )
 
 var (
-	log	= common.GetLog()
+	log = common.GetLog()
 )
 
 type Client struct {
@@ -26,9 +24,6 @@ type Client struct {
 
 func (cli *Client) Start(stop <-chan struct{}) <-chan struct{} {
 	done := make(chan struct{})
-	source := rand.NewSource(time.Now().UnixNano())
-	rd := rand.New(source)
-	id := strconv.Itoa(rd.Intn(100))
 
 	// Initialize super miner
 	nbMiners := runtime.NumCPU()
@@ -36,7 +31,7 @@ func (cli *Client) Start(stop <-chan struct{}) <-chan struct{} {
 
 	// Initialize and start Websocket client
 	cli.wscli = new(ws.Client)
-	go cli.wscli.Start(id)
+	go cli.wscli.Start()
 
 	go cli.listenSignals()
 

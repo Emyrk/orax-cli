@@ -9,6 +9,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/gorilla/websocket"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -39,11 +40,13 @@ type Client struct {
 var u = url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/miner"}
 
 func (cli *Client) connect() {
-	log.Infof("Connecting to Orax as [%s]...", cli.id)
+	id := viper.GetString("id")
+	minerSecret := viper.GetString("miner_secret")
+	log.Infof("Connecting to Orax as [%s]...", id)
 
 	expBackOff := exponentialBackOff()
 	err := backoff.RetryNotify(func() error {
-		m := http.Header{"Authorization": []string{cli.id}}
+		m := http.Header{"Authorization": []string{id + ":" + minerSecret}}
 		d := websocket.Dialer{
 			Proxy:             http.ProxyFromEnvironment,
 			HandshakeTimeout:  45 * time.Second,
@@ -62,8 +65,7 @@ func (cli *Client) connect() {
 	log.Info("Connected to Orax orchestrator")
 }
 
-func (cli *Client) Start(id string) {
-	cli.id = id
+func (cli *Client) Start() {
 	cli.stop = make(chan struct{})
 	cli.done = make(chan struct{})
 	cli.Received = make(chan []byte, 256)

@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitlab.com/pbernier3/orax-cli/common"
+	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
 	"gitlab.com/pbernier3/orax-cli/orax"
@@ -19,13 +19,18 @@ var mineCmd = &cobra.Command{
 	Use:   "mine",
 	Short: "Start mining",
 	Run: func(cmd *cobra.Command, args []string) {
-		os.Exit(_main())
+		err := viper.ReadInConfig()
+
+		if err != nil {
+			log.Warn("No config file found.")
+			log.Warn("To start mining, register your miner with command `orax-cli register`")
+		} else {
+			os.Exit(mine())
+		}
 	},
 }
 
-func _main() int {
-	log := common.GetLog()
-
+func mine() int {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
