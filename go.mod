@@ -24,4 +24,5 @@ require (
 	golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb // indirect
 	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/tools v0.0.0-20190703212419-2214986f1668 // indirect
+	gopkg.in/resty.v1 v1.12.0
 )

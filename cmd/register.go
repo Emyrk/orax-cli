@@ -4,10 +4,12 @@ import (
 	"crypto/rand"
 	"errors"
 	"net/mail"
+	"os"
 
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gitlab.com/pbernier3/orax-cli/api"
 	"gitlab.com/pbernier3/orax-cli/common"
 	ed "golang.org/x/crypto/ed25519"
 )
@@ -20,12 +22,12 @@ var registerCmd = &cobra.Command{
 	Use:   "register",
 	Short: "Register miner",
 	Run: func(cmd *cobra.Command, args []string) {
-		// err := viper.ReadInConfig()
-		// if err == nil && viper.IsSet("id") {
-		// 	log.Warnf("A miner identity is already configured in [%s]. Aborting registration.", common.ConfigFilePath)
-		// } else {
-		register()
-		// }
+		err := viper.ReadInConfig()
+		if err == nil && viper.IsSet("id") {
+			log.Warnf("A miner identity is already configured in [%s]. Aborting registration.", common.ConfigFilePath)
+		} else {
+			register()
+		}
 	},
 }
 
@@ -39,25 +41,27 @@ func register() {
 	viper.Set("public_key", string(pub))
 	viper.Set("private_key", string(sec))
 
-	// 1. Ask for payout address
+	// Ask for payout address
 	address, err := askPayoutAddress()
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	// 2. ask for email
+	// Ask for email
 	email, err := askEmail()
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	// TODO: ID and secret coming back from registration
-	// Send address and email
-	log.Info(address, email)
+	user, err := api.RegisterUser(email, pub, address)
+	if err != nil {
+		log.Errorf("Failed to register: %s", err)
+		os.Exit(1)
+	}
 
-	viper.Set("id", "luap")
-	viper.Set("miner_secret", "XABDHIEWUHFWIFWKLFDFD")
+	viper.Set("id", user.Id)
+	viper.Set("miner_secret", user.MinerSecret)
 
 	err = viper.WriteConfig()
 	if err != nil {
