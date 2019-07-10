@@ -13,7 +13,7 @@ const OraxApiBaseUrl = "http://localhost:2666"
 var log = common.GetLog()
 
 type User struct {
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	MinerSecret string `json:"minerSecret"`
 }
 

@@ -60,7 +60,7 @@ func register() {
 		os.Exit(1)
 	}
 
-	viper.Set("id", user.Id)
+	viper.Set("id", user.ID)
 	viper.Set("miner_secret", user.MinerSecret)
 
 	err = viper.WriteConfig()

@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
@@ -21,8 +22,8 @@ func exponentialBackOff() *backoff.ExponentialBackOff {
 		InitialInterval:     500 * time.Millisecond,
 		RandomizationFactor: 0.5,
 		Multiplier:          2,
-		MaxInterval:         15 * time.Second,
-		MaxElapsedTime:      30 * time.Minute,
+		MaxInterval:         1 * time.Minute,
+		MaxElapsedTime:      72 * time.Hour,
 		Clock:               backoff.SystemClock,
 	}
 	b.Reset()
@@ -51,7 +52,12 @@ func (cli *Client) connect() {
 			Proxy:             http.ProxyFromEnvironment,
 			HandshakeTimeout:  45 * time.Second,
 			EnableCompression: true}
-		c, _, err := d.Dial(u.String(), m)
+		c, x, err := d.Dial(u.String(), m)
+
+		if x != nil && x.StatusCode == 401 {
+			return backoff.Permanent(errors.New("Failed to authenticate with orax orchestrator"))
+		}
+
 		cli.conn = c
 		return err
 	}, expBackOff, func(err error, duration time.Duration) {
@@ -59,7 +65,7 @@ func (cli *Client) connect() {
 	})
 
 	if err != nil {
-		log.Fatalf("Failed to connect after retrying for over %s", expBackOff.MaxElapsedTime)
+		log.Fatalf("Failed to connect: %s", err)
 	}
 
 	log.Info("Connected to Orax orchestrator")
