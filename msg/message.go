@@ -11,7 +11,6 @@ const CurrentVersion = 0
 
 var log = common.GetLog()
 
-
 type MessageType = uint8
 
 const (

@@ -32,7 +32,6 @@ func exponentialBackOff() *backoff.ExponentialBackOff {
 
 type Client struct {
 	id       string
-	stop     chan struct{}
 	Received chan []byte
 	done     chan struct{}
 	conn     *websocket.Conn
@@ -54,8 +53,12 @@ func (cli *Client) connect() {
 			EnableCompression: true}
 		c, x, err := d.Dial(u.String(), m)
 
-		if x != nil && x.StatusCode == 401 {
-			return backoff.Permanent(errors.New("Failed to authenticate with orax orchestrator"))
+		if x != nil {
+			if x.StatusCode == 401 {
+				return backoff.Permanent(errors.New("Failed to authenticate with orax orchestrator"))
+			} else if x.StatusCode == 409 {
+				return backoff.Permanent(errors.New("Already connected with the same miner id"))
+			}
 		}
 
 		cli.conn = c
@@ -72,41 +75,34 @@ func (cli *Client) connect() {
 }
 
 func (cli *Client) Start() {
-	cli.stop = make(chan struct{})
 	cli.done = make(chan struct{})
-	cli.Received = make(chan []byte, 256)
+	cli.Received = make(chan []byte)
 
 	cli.connect()
 
 	go cli.read()
-
-	for {
-		select {
-		case <-cli.done:
-			return
-		case <-cli.stop:
-			log.Info("Stopping websocket client")
-
-			// Cleanly close the connection by sending a close message and then
-			// waiting (with timeout) for the server to close the connection.
-			err := cli.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
-				log.Error("Failed to gracefully disconnect: ", err)
-				return
-			}
-			select {
-			case <-cli.done:
-			case <-time.After(time.Second):
-			}
-			return
-		}
-	}
 }
 
 func (cli *Client) Stop() {
-	close(cli.stop)
-	<-cli.done
-	<-cli.Received
+	log.Info("Stopping websocket client...")
+
+	// connection can be nil if we are trying to re-connect to the server
+	if cli.conn != nil {
+
+		// Cleanly close the connection by sending a close message and then
+		// waiting (with timeout) for the server to close the connection.
+		err := cli.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+		if err != nil {
+			log.Error("Failed to gracefully disconnect: ", err)
+			return
+		}
+
+		// the `done` channel is being closed by the read function
+		select {
+		case <-cli.done:
+		case <-time.After(2 * time.Second):
+		}
+	}
 }
 
 func (cli *Client) read() {

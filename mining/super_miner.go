@@ -16,6 +16,10 @@ var (
 	log = common.GetLog()
 )
 
+func init() {
+	LX.Init(0xfafaececfafaecec, 25, 256, 5)
+}
+
 type SuperMiner struct {
 	running       bool
 	miners        []*Miner
@@ -33,8 +37,6 @@ type MiningSession struct {
 }
 
 func NewSuperMiner(nbMiners int) *SuperMiner {
-	LX.Init(0xfafaececfafaecec, 25, 256, 5)
-
 	superMiner := new(SuperMiner)
 	miners := make([]*Miner, nbMiners, nbMiners)
 	superMiner.miners = miners

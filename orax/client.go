@@ -76,7 +76,7 @@ func (cli *Client) listenSignals() {
 
 		message, err := msg.UnmarshalMessage(received)
 		if err != nil {
-			log.Warn("Failed to unmarshal message: ", err)
+			log.Error("Failed to unmarshal message: ", err)
 			continue
 		}
 
@@ -105,6 +105,8 @@ func (cli *Client) listenSignals() {
 				}).Infof("Submitting mining result")
 
 				cli.wscli.Send(msm.Marshal())
+			} else {
+				log.Info("Skipping submission as no mining session was running.")
 			}
 		default:
 			log.Warnf("Unexpected message %T!\n", v)

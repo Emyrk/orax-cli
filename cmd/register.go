@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.com/pbernier3/orax-cli/api"
-	"gitlab.com/pbernier3/orax-cli/common"
 	ed "golang.org/x/crypto/ed25519"
 )
 
@@ -24,7 +23,7 @@ var registerCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := viper.ReadInConfig()
 		if err == nil && viper.IsSet("id") {
-			log.Warnf("A miner identity is already configured in [%s]. Aborting registration.", common.ConfigFilePath)
+			log.Warnf("A miner identity is already configured in [%s]. Aborting registration.", configFilePath)
 		} else {
 			register()
 		}
@@ -67,7 +66,7 @@ func register() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Infof("Registration completed. Config stored in [%s]", common.ConfigFilePath)
+	log.Infof("Registration completed. Config stored in [%s]", configFilePath)
 }
 
 func askPayoutAddress() (address string, err error) {
