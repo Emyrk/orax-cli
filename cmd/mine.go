@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/spf13/viper"
@@ -11,8 +12,11 @@ import (
 	"gitlab.com/pbernier3/orax-cli/orax"
 )
 
+var nbMiners int
+
 func init() {
 	rootCmd.AddCommand(mineCmd)
+	mineCmd.Flags().IntVarP(&nbMiners, "nbminer", "n", runtime.NumCPU(), "Number of concurrent miners. Default to number of logical CPUs. ")
 }
 
 var mineCmd = &cobra.Command{
@@ -36,7 +40,8 @@ func mine() int {
 
 	stopOraxCli := make(chan struct{})
 	oraxCli := new(orax.Client)
-	oraxCliDone := oraxCli.Start(stopOraxCli)
+	config := orax.ClientConfig{NbMiners: nbMiners}
+	oraxCliDone := oraxCli.Start(config, stopOraxCli)
 
 	if oraxCliDone == nil {
 		return 1

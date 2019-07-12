@@ -1,7 +1,6 @@
 package orax
 
 import (
-	"runtime"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -22,12 +21,15 @@ type Client struct {
 	miner *mining.SuperMiner
 }
 
-func (cli *Client) Start(stop <-chan struct{}) <-chan struct{} {
+type ClientConfig struct {
+	NbMiners int
+}
+
+func (cli *Client) Start(config ClientConfig, stop <-chan struct{}) <-chan struct{} {
 	done := make(chan struct{})
 
 	// Initialize super miner
-	nbMiners := runtime.NumCPU()
-	cli.miner = mining.NewSuperMiner(nbMiners)
+	cli.miner = mining.NewSuperMiner(config.NbMiners)
 
 	// Initialize and start Websocket client
 	cli.wscli = new(ws.Client)
