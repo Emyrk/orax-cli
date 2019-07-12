@@ -11,14 +11,18 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "orax",
+	Use:   "orax-cli",
 	Short: "Mining client for the Orax mining pool",
 }
 
-var configFilePath string
+var (
+	configFilePath string
+	version        string // Set at build time (ldflag)
+)
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	rootCmd.Version = version
 	rootCmd.PersistentFlags().StringVarP(&configFilePath, "config", "c", "", "Config file path (default $HOME/.orax/config.yml)")
 }
 
