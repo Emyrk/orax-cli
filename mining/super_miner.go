@@ -7,18 +7,10 @@ import (
 
 	"gitlab.com/pbernier3/orax-cli/common"
 
-	lxr "github.com/pegnet/LXR256"
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	LX  lxr.LXRHash
-	log = common.GetLog()
-)
-
-func init() {
-	LX.Init(0xfafaececfafaecec, 25, 256, 5)
-}
+var log = common.GetLog()
 
 type SuperMiner struct {
 	running       bool
@@ -42,7 +34,7 @@ func NewSuperMiner(nbMiners int) *SuperMiner {
 	superMiner.miners = miners
 
 	for i := 0; i < nbMiners; i++ {
-		miners[i] = NewMiner(i, &LX)
+		miners[i] = NewMiner(i)
 	}
 
 	return superMiner

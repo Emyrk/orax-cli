@@ -5,21 +5,19 @@ import (
 	"encoding/binary"
 	"sync"
 
-	lxr "github.com/pegnet/LXR256"
+	"gitlab.com/pbernier3/orax-cli/hash"
 )
 
 type Miner struct {
 	id         int
-	hasher     *lxr.LXRHash
 	stop       chan int
 	opsCounter uint64
 	bestNonce  *Nonce
 }
 
-func NewMiner(id int, hasher *lxr.LXRHash) *Miner {
+func NewMiner(id int) *Miner {
 	miner := new(Miner)
 	miner.id = id
-	miner.hasher = hasher
 	miner.stop = make(chan int)
 	miner.bestNonce = nil
 
@@ -61,7 +59,7 @@ mining:
 		}
 
 		dataToHash := append(dataToMine, nonce...)
-		h := LX.Hash(dataToHash)
+		h := hash.Hash(dataToHash)
 		diff := computeDifficulty(h)
 		miner.opsCounter++
 
