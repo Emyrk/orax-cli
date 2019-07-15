@@ -40,7 +40,7 @@ type Client struct {
 var u = url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/miner"}
 
 func (cli *Client) connect() {
-	id := viper.GetString("id")
+	id := viper.GetString("miner_id")
 	minerSecret := viper.GetString("miner_secret")
 	log.Infof("Connecting to Orax as [%s]...", id)
 
