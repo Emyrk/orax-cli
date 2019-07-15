@@ -50,7 +50,7 @@ func initConfig() {
 		// Create .orax folder and empty config file if necessary
 		if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
 			os.MkdirAll(configFolderPath, 0700)
-			os.Create(configFilePath)
+			os.OpenFile(configFilePath, os.O_CREATE, 0600)
 		}
 
 		viper.SetConfigType("yaml")
