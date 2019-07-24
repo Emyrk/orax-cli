@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/pbernier3/orax-cli/hash"
 	"gitlab.com/pbernier3/orax-cli/orax"
 )
 
@@ -35,6 +36,7 @@ var mineCmd = &cobra.Command{
 }
 
 func mine() int {
+	hash.InitLXR()
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 

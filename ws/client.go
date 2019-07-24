@@ -2,6 +2,8 @@ package ws
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -45,18 +47,28 @@ func (cli *Client) connect() {
 	log.Infof("Connecting to Orax as [%s]...", id)
 
 	expBackOff := exponentialBackOff()
+	header := http.Header{
+		"Authorization": []string{id + ":" + minerSecret},
+		"Version":       []string{common.Version[1:]}}
+
 	err := backoff.RetryNotify(func() error {
-		m := http.Header{"Authorization": []string{id + ":" + minerSecret}}
 		d := websocket.Dialer{
 			Proxy:             http.ProxyFromEnvironment,
 			HandshakeTimeout:  45 * time.Second,
 			EnableCompression: true}
-		c, x, err := d.Dial(u.String(), m)
+		c, resp, err := d.Dial(u.String(), header)
 
-		if x != nil {
-			if x.StatusCode == 401 {
+		if resp != nil {
+			if resp.StatusCode == 400 {
+				bytes, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					return backoff.Permanent(fmt.Errorf("Unexpected error: %s", err))
+				}
+				msg := string(bytes)
+				return backoff.Permanent(errors.New(msg))
+			} else if resp.StatusCode == 401 {
 				return backoff.Permanent(errors.New("Failed to authenticate with orax orchestrator"))
-			} else if x.StatusCode == 409 {
+			} else if resp.StatusCode == 409 {
 				return backoff.Permanent(errors.New("Already connected with the same miner id"))
 			}
 		}

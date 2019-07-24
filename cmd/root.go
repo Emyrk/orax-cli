@@ -17,12 +17,11 @@ var rootCmd = &cobra.Command{
 
 var (
 	configFilePath string
-	version        string // Set at build time (ldflag)
 )
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.Version = version
+	rootCmd.Version = common.Version
 	rootCmd.PersistentFlags().StringVarP(&configFilePath, "config", "c", "", "Config file path (default $HOME/.orax/config.yml)")
 }
 

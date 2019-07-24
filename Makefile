@@ -1,8 +1,8 @@
-REVISION = $(shell git describe --tags)
+REVISION = $(shell git describe --abbrev=0 --tags)
 $(info    Make orax-cli $(REVISION))
 
 orax-cli: 
-	go build -ldflags "-X gitlab.com/pbernier3/orax-cli/cmd.version=$(REVISION)" -o orax-cli
+	go build -ldflags "-X gitlab.com/pbernier3/orax-cli/common.Version=$(REVISION)" -o orax-cli
 
 dist: orax-cli.app orax-cli.exe orax-cli-linux
 
