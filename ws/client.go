@@ -86,12 +86,16 @@ func (cli *Client) connect() {
 	log.Info("Connected to Orax orchestrator")
 }
 
-func (cli *Client) Start() {
+func NewWebSocketClient() (cli *Client) {
+	cli = new(Client)
 	cli.done = make(chan struct{})
 	cli.Received = make(chan []byte)
 
-	cli.connect()
+	return cli
+}
 
+func (cli *Client) Start() {
+	cli.connect()
 	go cli.read()
 }
 

@@ -32,9 +32,9 @@ func (cli *Client) Start(config ClientConfig, stop <-chan struct{}) <-chan struc
 	cli.miner = mining.NewSuperMiner(config.NbMiners)
 
 	// Initialize and start Websocket client
-	cli.wscli = new(ws.Client)
-	go cli.wscli.Start()
+	cli.wscli = ws.NewWebSocketClient()
 
+	go cli.wscli.Start()
 	go cli.listenSignals()
 
 	go func() {

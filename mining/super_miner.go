@@ -93,7 +93,11 @@ func (sm *SuperMiner) computeMiningSessionResult() (uint64, []Nonce) {
 	var bestNonces []Nonce
 	for i := 0; i < len(sm.miners); i++ {
 		totalOps += sm.miners[i].opsCounter
-		bestNonces = append(bestNonces, *sm.miners[i].bestNonce)
+
+		// bestNonce can be nil if the miner didn't have the time to compute a single hash
+		if sm.miners[i].bestNonce != nil {
+			bestNonces = append(bestNonces, *sm.miners[i].bestNonce)
+		}
 	}
 	sortNoncesByDiff(bestNonces)
 
