@@ -12,21 +12,21 @@ type Miner struct {
 	id         int
 	stop       chan int
 	opsCounter uint64
-	bestNonce  *Nonce
+	bestNonces []Nonce
 }
 
 func NewMiner(id int) *Miner {
 	miner := new(Miner)
 	miner.id = id
 	miner.stop = make(chan int)
-	miner.bestNonce = nil
+	miner.bestNonces = make([]Nonce, 0, 10)
 
 	return miner
 }
 
 func (miner *Miner) Reset() {
 	miner.opsCounter = 0
-	miner.bestNonce = nil
+	miner.bestNonces = make([]Nonce, 0, 10)
 }
 
 type Nonce struct {
@@ -34,7 +34,7 @@ type Nonce struct {
 	Difficulty uint64
 }
 
-func (miner *Miner) mine(oprHash []byte, wg *sync.WaitGroup) {
+func (miner *Miner) mine(oprHash []byte, maxNonces int, wg *sync.WaitGroup) {
 	// Create a slice of sufficient capacity to avoid a new underlying array to be allocated
 	// when appending nonce after the OPR
 	dataToMine := make([]byte, 32, 64)

@@ -28,7 +28,8 @@ type Message struct {
 
 type MineSignalMessage struct {
 	Message
-	OprHash []byte
+	MaxNonces byte
+	OprHash   []byte
 }
 
 func NewMineSignalMessage() *MineSignalMessage {
@@ -42,6 +43,7 @@ func (mm *MineSignalMessage) Marshal() []byte {
 	bytes := []byte{mm.Version, mm.Type}
 
 	bytes = append(bytes, mm.OprHash...)
+	bytes = append(bytes, mm.MaxNonces)
 
 	return bytes
 }
@@ -129,7 +131,8 @@ func unmarshalMineSignalMessage(bytes []byte) (*MineSignalMessage, error) {
 
 	m.Version = bytes[0]
 	m.Type = bytes[1]
-	m.OprHash = bytes[2:]
+	m.OprHash = bytes[2:34]
+	m.MaxNonces = bytes[34]
 
 	return m, nil
 }
