@@ -3,7 +3,7 @@ package hash
 import (
 	"sync"
 
-	lxr "github.com/pegnet/LXR256"
+	lxr "github.com/pegnet/LXRHash"
 )
 
 var LX lxr.LXRHash
