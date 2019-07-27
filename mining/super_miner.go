@@ -27,7 +27,7 @@ type MiningSession struct {
 	EndTime           time.Time
 	Duration          time.Duration
 	TotalOps          uint64
-	OrderedBestNonces []Nonce
+	OrderedBestNonces []*Nonce
 }
 
 func NewSuperMiner(nbMiners int) *SuperMiner {
@@ -45,6 +45,10 @@ func NewSuperMiner(nbMiners int) *SuperMiner {
 func (sm *SuperMiner) Mine(oprHash []byte, maxNonces int) {
 	if sm.running {
 		log.Fatal("Tried to run an already running miner")
+	}
+	if maxNonces <= 0 {
+		log.WithField("maxNonces", maxNonces).Error("Invalid maxNonces")
+		return
 	}
 
 	log.WithFields(logrus.Fields{
@@ -96,22 +100,22 @@ func (sm *SuperMiner) Stop() MiningSession {
 	return *sm.miningSession
 }
 
-func (sm *SuperMiner) computeMiningSessionResult() (uint64, []Nonce) {
+func (sm *SuperMiner) computeMiningSessionResult() (uint64, []*Nonce) {
 
 	totalOps := uint64(0)
-	var bestNonces []Nonce
+	var bestNonces []*Nonce
 	for i := 0; i < len(sm.miners); i++ {
 		totalOps += sm.miners[i].opsCounter
 		bestNonces = append(bestNonces, sm.miners[i].bestNonces...)
 	}
-	sortNoncesByDiff(bestNonces)
+	SortNoncesByDiff(bestNonces)
 
 	return totalOps, bestNonces
 }
 
-func sortNoncesByDiff(nonces []Nonce) {
+func SortNoncesByDiff(nonces []*Nonce) {
 	sort.Slice(nonces, func(i, j int) bool {
-		return nonces[i].Difficulty < nonces[j].Difficulty
+		return nonces[i].Difficulty > nonces[j].Difficulty
 	})
 }
 

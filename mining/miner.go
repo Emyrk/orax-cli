@@ -12,21 +12,21 @@ type Miner struct {
 	id         int
 	stop       chan int
 	opsCounter uint64
-	bestNonces []Nonce
+	bestNonces []*Nonce
 }
 
 func NewMiner(id int) *Miner {
 	miner := new(Miner)
 	miner.id = id
 	miner.stop = make(chan int)
-	miner.bestNonces = make([]Nonce, 0, 10)
+	miner.bestNonces = make([]*Nonce, 0, 256)
 
 	return miner
 }
 
 func (miner *Miner) Reset() {
 	miner.opsCounter = 0
-	miner.bestNonces = make([]Nonce, 0, 10)
+	miner.bestNonces = make([]*Nonce, 0, 256)
 }
 
 type Nonce struct {
@@ -63,11 +63,27 @@ mining:
 		diff := computeDifficulty(h)
 		miner.opsCounter++
 
-		if miner.bestNonce == nil || diff > miner.bestNonce.Difficulty {
-			miner.bestNonce = &Nonce{append([]byte(nil), nonce...), diff}
+		if len(miner.bestNonces) < maxNonces {
+			// If the buffer is not yet full just append
+			miner.bestNonces = append(miner.bestNonces, &Nonce{copyNonce(nonce), diff})
+			SortNoncesByDiff(miner.bestNonces)
+		} else if miner.bestNonces[len(miner.bestNonces)-1].Difficulty < diff {
+			// Otherwise if diff is better than the last best nonce
+			miner.bestNonces = miner.bestNonces[:maxNonces-1]
+			miner.bestNonces = append(miner.bestNonces, &Nonce{copyNonce(nonce), diff})
+			SortNoncesByDiff(miner.bestNonces)
 		}
 	}
+
 	wg.Done()
+}
+
+func copyNonce(nonce []byte) []byte {
+	copy := make([]byte, len(nonce))
+	for i, b := range nonce {
+		copy[i] = b
+	}
+	return copy
 }
 
 func computeDifficulty(h []byte) uint64 {

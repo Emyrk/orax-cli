@@ -93,20 +93,27 @@ func (cli *Client) listenSignals() {
 			if cli.miner.IsRunning() {
 				ms := cli.miner.Stop()
 
-				msm := msg.NewMinerSubmissionMessage()
+				msm := new(msg.MinerSubmissionMessage)
 				msm.OprHash = ms.OprHash
-				msm.Nonce = ms.OrderedBestNonces[len(ms.OrderedBestNonces)-1].Nonce
-				msm.Difficulty = ms.OrderedBestNonces[len(ms.OrderedBestNonces)-1].Difficulty
+
+				msm.Nonces = make([]msg.Nonce, len(ms.OrderedBestNonces))
+				for i, nonce := range ms.OrderedBestNonces {
+					msm.Nonces[i] = msg.Nonce{Nonce: nonce.Nonce, Difficulty: nonce.Difficulty}
+				}
 				msm.HashRate = uint64(float64(ms.TotalOps) / ms.Duration.Seconds())
 
 				log.WithFields(logrus.Fields{
-					"nonce":      msm.Nonce,
-					"oprHash":    msm.OprHash,
-					"difficulty": msm.Difficulty,
-					"hashRate":   msm.HashRate,
+					"nonces":   msm.Nonces,
+					"oprHash":  msm.OprHash,
+					"hashRate": msm.HashRate,
 				}).Infof("Submitting mining result")
 
-				cli.wscli.Send(msm.Marshal())
+				data, err := msm.Marshal()
+				if err != nil {
+					log.Error("Failed to marshal MinerSubmissionMessage: ", err)
+				} else {
+					cli.wscli.Send(data)
+				}
 			} else {
 				log.Info("Skipping submission as no mining session was running.")
 			}

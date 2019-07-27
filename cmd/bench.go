@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"gitlab.com/pbernier3/orax-cli/hash"
 	"gitlab.com/pbernier3/orax-cli/mining"
 
 	"github.com/spf13/cobra"
@@ -26,6 +27,7 @@ func init() {
 }
 
 func bench() {
+	hash.InitLXR()
 	oprHash := make([]byte, 32)
 	rand.Read(oprHash)
 
@@ -34,7 +36,7 @@ func bench() {
 
 	// Start miners
 	log.Infof("Starting benchmarking for %s", duration)
-	miner.Mine(oprHash)
+	miner.Mine(oprHash, 3)
 	ticker := time.NewTicker(duration)
 	<-ticker.C
 	miningSession := miner.Stop()

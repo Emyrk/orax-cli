@@ -1,13 +1,11 @@
 package msg
 
 import (
-	"encoding/binary"
+	"encoding/json"
 	"errors"
 
 	"gitlab.com/pbernier3/orax-cli/common"
 )
-
-const CurrentVersion = 0
 
 var log = common.GetLog()
 
@@ -21,84 +19,55 @@ const (
 	MinerSubmission MessageType = iota
 )
 
-type Message struct {
-	Version uint8
-	Type    MessageType
-}
-
 type MineSignalMessage struct {
-	Message
-	MaxNonces byte
-	OprHash   []byte
+	MaxNonces int    `json:"maxNonces"`
+	OprHash   []byte `json:"oprHash"`
 }
 
-func NewMineSignalMessage() *MineSignalMessage {
-	ssm := new(MineSignalMessage)
-	ssm.Version = CurrentVersion
-	ssm.Type = MineSignal
-	return ssm
-}
-
-func (mm *MineSignalMessage) Marshal() []byte {
-	bytes := []byte{mm.Version, mm.Type}
-
-	bytes = append(bytes, mm.OprHash...)
-	bytes = append(bytes, mm.MaxNonces)
-
-	return bytes
+func NewMineSignalMessage(oprHash []byte, maxNonces int) *MineSignalMessage {
+	m := new(MineSignalMessage)
+	m.OprHash = oprHash
+	m.MaxNonces = maxNonces
+	return m
 }
 
 type SubmitSignalMessage struct {
-	Message
-	WindowDurationSec uint8
-}
-
-func NewSubmitSignalMessage() *SubmitSignalMessage {
-	ssm := new(SubmitSignalMessage)
-	ssm.Version = CurrentVersion
-	ssm.Type = SubmitSignal
-	return ssm
-}
-
-func (mm *SubmitSignalMessage) Marshal() []byte {
-	bytes := make([]byte, 3)
-
-	bytes[0] = mm.Version
-	bytes[1] = mm.Type
-	bytes[2] = mm.WindowDurationSec
-
-	return bytes
+	WindowDurationSec uint8 `json:"oprHash"`
 }
 
 type MinerSubmissionMessage struct {
-	Message
-	OprHash    []byte
-	Nonce      []byte
-	Difficulty uint64
-	HashRate   uint64
+	OprHash  []byte  `json:"oprHash"`
+	Nonces   []Nonce `json:"nonces"`
+	HashRate uint64  `json:"hashRate"`
 }
 
-func NewMinerSubmissionMessage() *MinerSubmissionMessage {
-	ssm := new(MinerSubmissionMessage)
-	ssm.Version = CurrentVersion
-	ssm.Type = MinerSubmission
-	return ssm
+type Nonce struct {
+	Nonce      []byte `json:"nonce"`
+	Difficulty uint64 `json:"diff"`
 }
 
-func (mm *MinerSubmissionMessage) Marshal() []byte {
-	bytes := []byte{mm.Version, mm.Type}
+func (msm *MineSignalMessage) Marshal() ([]byte, error) {
+	return marshal(MineSignal, msm)
+}
 
-	bytes = append(bytes, mm.OprHash...)
-	bytes = append(bytes, mm.Nonce...)
+func (ssm *SubmitSignalMessage) Marshal() ([]byte, error) {
+	return marshal(SubmitSignal, ssm)
+}
 
-	bs := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bs, mm.Difficulty)
-	bytes = append(bytes, bs...)
+func (msm *MinerSubmissionMessage) Marshal() ([]byte, error) {
+	return marshal(MinerSubmission, msm)
+}
 
-	binary.LittleEndian.PutUint64(bs, mm.HashRate)
-	bytes = append(bytes, bs...)
+func marshal(t MessageType, i interface{}) ([]byte, error) {
+	bytes := []byte{t}
 
-	return bytes
+	j, err := json.Marshal(i)
+	if err != nil {
+		return []byte{}, err
+	}
+	bytes = append(bytes, j...)
+
+	return bytes, nil
 }
 
 ////////////////////////////////////////
@@ -106,65 +75,36 @@ func (mm *MinerSubmissionMessage) Marshal() []byte {
 ////////////////////////////////////////
 
 func UnmarshalMessage(bytes []byte) (interface{}, error) {
-	if len(bytes) <= 2 {
+	if len(bytes) <= 1 {
 		return nil, errors.New("Message too short")
 	}
 
-	switch bytes[1] {
+	switch bytes[0] {
 	case MineSignal:
-		return unmarshalMineSignalMessage(bytes)
+		return unmarshalMineSignalMessage(bytes[1:])
 	case SubmitSignal:
-		return unmarshalSubmitSignalMessage(bytes)
+		return unmarshalSubmitSignalMessage(bytes[1:])
 	case MinerSubmission:
-		return unmarshalMinerSubmissionMessage(bytes)
+		return unmarshalMinerSubmissionMessage(bytes[1:])
 	default:
 		return nil, errors.New("Unknown message type")
 	}
 }
 
 func unmarshalMineSignalMessage(bytes []byte) (*MineSignalMessage, error) {
-	if len(bytes) != 34 {
-		return nil, errors.New("Wrong message size")
-	}
-
-	m := new(MineSignalMessage)
-
-	m.Version = bytes[0]
-	m.Type = bytes[1]
-	m.OprHash = bytes[2:34]
-	m.MaxNonces = bytes[34]
-
-	return m, nil
+	var msm MineSignalMessage
+	err := json.Unmarshal(bytes, &msm)
+	return &msm, err
 }
 
 func unmarshalSubmitSignalMessage(bytes []byte) (*SubmitSignalMessage, error) {
-	if len(bytes) != 3 {
-		return nil, errors.New("Wrong message size")
-	}
-
-	m := new(SubmitSignalMessage)
-
-	m.Version = bytes[0]
-	m.Type = bytes[1]
-	m.WindowDurationSec = bytes[2]
-
-	return m, nil
+	var ssm SubmitSignalMessage
+	err := json.Unmarshal(bytes, &ssm)
+	return &ssm, err
 }
 
 func unmarshalMinerSubmissionMessage(bytes []byte) (*MinerSubmissionMessage, error) {
-	if len(bytes) != 82 {
-		return nil, errors.New("Wrong message size")
-	}
-
-	m := new(MinerSubmissionMessage)
-
-	m.Version = bytes[0]
-	m.Type = bytes[1]
-	m.OprHash = bytes[2:34]
-	m.Nonce = bytes[34:66]
-
-	m.Difficulty = binary.LittleEndian.Uint64(bytes[66:74])
-	m.HashRate = binary.LittleEndian.Uint64(bytes[74:82])
-
-	return m, nil
+	var msm MinerSubmissionMessage
+	err := json.Unmarshal(bytes, &msm)
+	return &msm, err
 }
