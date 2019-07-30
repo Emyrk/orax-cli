@@ -73,7 +73,6 @@ github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrk
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
-github.com/pegnet/LXR256 v0.0.0-20190721001507-5e925f415fa2 h1:yL8HXUmok0r8lBmHoe6gXbQS77CsVImOtS8/Khpyu+Y=
 github.com/pegnet/LXR256 v0.0.0-20190721001507-5e925f415fa2/go.mod h1:11Z6s/PoxMH3ON6Kh+2MxNFdaq9op2sgvIAqg52d/3I=
 github.com/pegnet/LXRHash v0.0.0-20190726144200-a35b17bbf85c h1:/3H7wWMIg/X/vvnkaVL48HrEm9WbTW/H/mFr8bKVeAI=
 github.com/pegnet/LXRHash v0.0.0-20190726144200-a35b17bbf85c/go.mod h1:0zBp9GFy9F77zuQbPkAmdUBRiptMaJ1V96eVFdMnXZA=
