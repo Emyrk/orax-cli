@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"gitlab.com/pbernier3/orax-cli/common"
@@ -39,7 +40,17 @@ type Client struct {
 	conn     *websocket.Conn
 }
 
-var u = url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/miner"}
+var u, _ = url.Parse("ws://localhost:8080/miner")
+
+func init() {
+	if os.Getenv("ORAX_ORCHESTRATOR_ENDPOINT") != "" {
+		url, err := url.ParseRequestURI(os.Getenv("ORAX_ORCHESTRATOR_ENDPOINT"))
+		if err != nil {
+			log.Fatalf("Failed to parse ORAX_ORCHESTRATOR_ENDPOINT: %s", err)
+		}
+		u = url
+	}
+}
 
 func (cli *Client) connect() {
 	id := viper.GetString("miner_id")

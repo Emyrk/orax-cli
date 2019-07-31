@@ -2,12 +2,14 @@ package api
 
 import (
 	"fmt"
+	"net/url"
+	"os"
 
 	"gitlab.com/pbernier3/orax-cli/common"
 	"gopkg.in/resty.v1"
 )
 
-const OraxApiBaseUrl = "http://localhost:2666"
+var OraxApiBaseUrl = "http://localhost:2666"
 
 var log = common.GetLog()
 
@@ -23,6 +25,15 @@ type Miner struct {
 
 type Error struct {
 	Message string `json:"error"`
+}
+
+func init() {
+	if os.Getenv("ORAX_API_ENDPOINT") != "" {
+		_, err := url.ParseRequestURI(os.Getenv("ORAX_API_ENDPOINT"))
+		if err != nil {
+			log.Fatalf("Failed to parse ORAX_API_ENDPOINT: %s", err)
+		}
+	}
 }
 
 func RegisterUser(email string, password string, payoutAddress string) (*User, error) {
