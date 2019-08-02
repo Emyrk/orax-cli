@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/spf13/viper"
 	"gitlab.com/pbernier3/orax-cli/common"
 	"gopkg.in/resty.v1"
 )
@@ -12,20 +13,6 @@ import (
 var OraxApiBaseUrl = "http://localhost:2666"
 
 var log = common.GetLog()
-
-type User struct {
-	ID            string `json:"id"`
-	Email         string `json:"email"`
-	PayoutAddress string `json:"payoutAddress"`
-}
-type Miner struct {
-	ID     string `json:"id"`
-	Secret string `json:"secret"`
-}
-
-type Error struct {
-	Message string `json:"error"`
-}
 
 func init() {
 	if os.Getenv("ORAX_API_ENDPOINT") != "" {
@@ -36,7 +23,7 @@ func init() {
 	}
 }
 
-func RegisterUser(email string, password string, payoutAddress string) (*User, error) {
+func RegisterUser(email string, password string, payoutAddress string) (*RegisterUserResult, error) {
 	log.Info("Registering new Orax user...")
 
 	resp, err := resty.R().
@@ -47,7 +34,7 @@ func RegisterUser(email string, password string, payoutAddress string) (*User, e
 			"password":      password,
 		}).
 		SetError(&Error{}).
-		SetResult(&User{}).
+		SetResult(&RegisterUserResult{}).
 		Post(OraxApiBaseUrl + "/user")
 
 	if err != nil {
@@ -59,15 +46,17 @@ func RegisterUser(email string, password string, payoutAddress string) (*User, e
 		return nil, fmt.Errorf("%s: %s", resp.Status(), errorMsg)
 	}
 
-	return resp.Result().(*User), nil
+	return resp.Result().(*RegisterUserResult), nil
 }
 
-func GetUser(id string, password string) (*User, error) {
+// Authenticate user and returns a JSON Web Token.
+// Input `id` can either be user id or email.
+func Authenticate(id string, password string) (*AuthenticateResult, error) {
 	resp, err := resty.R().
 		SetBasicAuth(id, password).
 		SetError(&Error{}).
-		SetResult(&User{}).
-		Get(OraxApiBaseUrl + "/user/" + id)
+		SetResult(&AuthenticateResult{}).
+		Post(OraxApiBaseUrl + "/user/auth")
 
 	if err != nil {
 		return nil, err
@@ -78,21 +67,20 @@ func GetUser(id string, password string) (*User, error) {
 		return nil, fmt.Errorf("%s: %s", resp.Status(), errorMsg)
 	}
 
-	return resp.Result().(*User), nil
+	return resp.Result().(*AuthenticateResult), nil
 }
 
-func RegisterMiner(userId string, password string, alias string) (*Miner, error) {
+func RegisterMiner(alias string) (*RegisterMinerResult, error) {
 	log.Info("Registering new miner with Orax...")
 
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
+		SetAuthToken(viper.GetString("jwt")).
 		SetBody(map[string]string{
-			"userId":   userId,
-			"alias":    alias,
-			"password": password,
+			"alias": alias,
 		}).
 		SetError(&Error{}).
-		SetResult(&Miner{}).
+		SetResult(&RegisterMinerResult{}).
 		Post(OraxApiBaseUrl + "/miner")
 
 	if err != nil {
@@ -104,5 +92,23 @@ func RegisterMiner(userId string, password string, alias string) (*Miner, error)
 		return nil, fmt.Errorf("%s: %s", resp.Status(), errorMsg)
 	}
 
-	return resp.Result().(*Miner), nil
+	return resp.Result().(*RegisterMinerResult), nil
 }
+
+// func GetUser(id string) (*User, error) {
+// 	resp, err := resty.R().
+// 		SetError(&Error{}).
+// 		SetResult(&User{}).
+// 		Get(OraxApiBaseUrl + "/user/" + id)
+
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	if resp.IsError() {
+// 		errorMsg := resp.Error().(*Error).Message
+// 		return nil, fmt.Errorf("%s: %s", resp.Status(), errorMsg)
+// 	}
+
+// 	return resp.Result().(*User), nil
+// }

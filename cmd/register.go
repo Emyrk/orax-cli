@@ -34,12 +34,12 @@ var registerCmd = &cobra.Command{
 }
 
 func register() error {
-	userID, password, err := getOraxUser()
+	err := getOraxUser()
 	if err != nil {
 		return err
 	}
 
-	err = registerMiner(userID, password)
+	err = registerMiner()
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func register() error {
 	return nil
 }
 
-func getOraxUser() (userID string, password string, err error) {
+func getOraxUser() (err error) {
 	prompt := promptui.Select{
 		Label: "Register miner with",
 		Items: []string{"a new Orax account", "an existing Orax account"},
@@ -63,44 +63,46 @@ func getOraxUser() (userID string, password string, err error) {
 	i, _, err := prompt.Run()
 
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
+	var userID, jwt string
 	if i == 0 {
-		userID, password, err = newOraxUser()
+		userID, jwt, err = newOraxUser()
 	} else {
-		userID, password, err = existingOraxUser()
+		userID, jwt, err = existingOraxUser()
 	}
 
 	viper.Set("user_id", userID)
+	viper.Set("jwt", jwt)
 
-	return userID, password, err
+	return err
 }
 
-func existingOraxUser() (userID string, password string, err error) {
+func existingOraxUser() (userID string, jwt string, err error) {
 	email, err := askEmail()
 	if err != nil {
 		return "", "", err
 	}
-	password, err = askPassword()
+	password, err := askPassword()
 	if err != nil {
 		return "", "", err
 	}
 
-	user, err := api.GetUser(email, password)
+	result, err := api.Authenticate(email, password)
 	if err != nil {
 		return "", "", fmt.Errorf("Failed to authenticate: %s", err)
 	}
 
-	return user.ID, password, nil
+	return result.ID, result.JWT, nil
 }
 
-func newOraxUser() (userID string, password string, err error) {
+func newOraxUser() (userID string, jwt string, err error) {
 	email, err := askEmail()
 	if err != nil {
 		return "", "", err
 	}
-	password, err = askPassword()
+	password, err := askPassword()
 	if err != nil {
 		return "", "", err
 	}
@@ -116,10 +118,10 @@ func newOraxUser() (userID string, password string, err error) {
 
 	log.Info("New Orax user registered.")
 
-	return user.ID, password, nil
+	return user.ID, user.JWT, nil
 }
 
-func registerMiner(userID string, password string) error {
+func registerMiner() error {
 	log.Info("Registering this machine as a miner with your account:")
 
 	alias, err := askMinerAlias()
@@ -127,7 +129,7 @@ func registerMiner(userID string, password string) error {
 		return err
 	}
 
-	miner, err := api.RegisterMiner(userID, password, alias)
+	miner, err := api.RegisterMiner(alias)
 	if err != nil {
 		return err
 	}
@@ -186,7 +188,7 @@ func askPayoutAddress() (address string, err error) {
 
 func askMinerAlias() (alias string, err error) {
 	prompt := promptui.Prompt{
-		Label: "Miner alias",
+		Label: "Miner alias (name of the machine for instance)",
 	}
 
 	alias, err = prompt.Run()
