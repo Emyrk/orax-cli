@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -34,10 +35,11 @@ func exponentialBackOff() *backoff.ExponentialBackOff {
 }
 
 type Client struct {
-	id       string
-	Received chan []byte
-	done     chan struct{}
-	conn     *websocket.Conn
+	id          string
+	Received    chan []byte
+	done        chan struct{}
+	conn        *websocket.Conn
+	NoncePrefix []byte // Not the best place to store but simple and convenient
 }
 
 var u, _ = url.Parse("ws://localhost:8080/miner")
@@ -62,6 +64,7 @@ func (cli *Client) connect() {
 		"Authorization": []string{id + ":" + minerSecret},
 		"Version":       []string{common.Version[1:]}}
 
+	var noncePrefix []byte
 	err := backoff.RetryNotify(func() error {
 		d := websocket.Dialer{
 			Proxy:             http.ProxyFromEnvironment,
@@ -82,9 +85,16 @@ func (cli *Client) connect() {
 			} else if resp.StatusCode == 409 {
 				return backoff.Permanent(errors.New("Already connected with the same miner id"))
 			}
+
+			// Decode assigned nonce prefix
+			noncePrefix, err = hex.DecodeString(resp.Header.Get("NoncePrefix"))
+			if err != nil {
+				return backoff.Permanent(fmt.Errorf("Failed to get nonce prefix: %s", err))
+			}
 		}
 
 		cli.conn = c
+		cli.NoncePrefix = noncePrefix
 		return err
 	}, expBackOff, func(err error, duration time.Duration) {
 		log.Warnf("Failed to connected. Retrying in %s", duration)

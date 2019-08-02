@@ -88,7 +88,7 @@ func (cli *Client) listenSignals() {
 				log.Warn("Stopping a stalled mining session")
 				cli.miner.Stop()
 			}
-			cli.miner.Mine(v.OprHash, int(v.MaxNonces))
+			cli.miner.Mine(v.OprHash, cli.wscli.NoncePrefix, int(v.MaxNonces))
 		case *msg.SubmitSignalMessage:
 			if cli.miner.IsRunning() {
 				ms := cli.miner.Stop()

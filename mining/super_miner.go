@@ -22,6 +22,7 @@ type SuperMiner struct {
 }
 
 type MiningSession struct {
+	NoncePrefix       []byte
 	OprHash           []byte
 	StartTime         time.Time
 	EndTime           time.Time
@@ -42,7 +43,7 @@ func NewSuperMiner(nbMiners int) *SuperMiner {
 	return superMiner
 }
 
-func (sm *SuperMiner) Mine(oprHash []byte, maxNonces int) {
+func (sm *SuperMiner) Mine(oprHash []byte, noncePrefix []byte, maxNonces int) {
 	if sm.running {
 		log.Fatal("Tried to run an already running miner")
 	}
@@ -54,6 +55,7 @@ func (sm *SuperMiner) Mine(oprHash []byte, maxNonces int) {
 	log.WithFields(logrus.Fields{
 		"nbSubMiners": len(sm.miners),
 		"oprHash":     oprHash,
+		"noncePrefix": noncePrefix,
 		"maxNonces":   maxNonces,
 	}).Infof("Starting mining")
 
@@ -61,6 +63,7 @@ func (sm *SuperMiner) Mine(oprHash []byte, maxNonces int) {
 	sm.maxNonces = maxNonces
 
 	sm.miningSession = new(MiningSession)
+	sm.miningSession.NoncePrefix = noncePrefix
 	sm.miningSession.StartTime = time.Now()
 	sm.miningSession.OprHash = oprHash
 
@@ -68,7 +71,7 @@ func (sm *SuperMiner) Mine(oprHash []byte, maxNonces int) {
 	for i := 0; i < len(sm.miners); i++ {
 		sm.miners[i].Reset()
 		wg.Add(1)
-		go sm.miners[i].mine(oprHash, maxNonces, wg)
+		go sm.miners[i].mine(oprHash, noncePrefix, maxNonces, wg)
 	}
 	sm.wg = wg
 }

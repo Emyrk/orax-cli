@@ -1,7 +1,6 @@
 package mining
 
 import (
-	"crypto/rand"
 	"encoding/binary"
 	"sync"
 
@@ -34,30 +33,46 @@ type Nonce struct {
 	Difficulty uint64
 }
 
-func (miner *Miner) mine(oprHash []byte, maxNonces int, wg *sync.WaitGroup) {
+func (miner *Miner) mine(oprHash []byte, noncePrefix []byte, maxNonces int, wg *sync.WaitGroup) {
 	// Create a slice of sufficient capacity to avoid a new underlying array to be allocated
 	// when appending nonce after the OPR
 	dataToMine := make([]byte, 32, 64)
 	copy(dataToMine, oprHash)
 
-	nonce := make([]byte, 32)
-	rand.Read(nonce)
+	prefixLength := len(noncePrefix) + 1
+	// Pre allocate a large enough slice of memory
+	nonce := make([]byte, 0, 64)
+	// Append the noncePrefix of the super miner, the local prefix (miner id) and the first 0
+	nonce = append(nonce, noncePrefix...)
+	nonce = append(nonce, byte(miner.id), 0)
 
 mining:
-	for i := 0; ; i++ {
+	for {
+		// Listen for end of mining signal
 		select {
 		case <-miner.stop:
 			break mining
 		default:
 		}
 
-		// TODO: Better way?
-		k := 0
-		for j := i; j > 0; j = j >> 8 {
-			nonce[k] = byte(j)
-			k++
+		// Increment nonce
+		i := prefixLength
+		for {
+			nonce[i]++
+			// if it overflows
+			if nonce[i] == 0 {
+				i++
+				// If we reached the end of the slice, expand it
+				if i == len(nonce) {
+					nonce = append(nonce, 0)
+					break
+				}
+			} else {
+				break
+			}
 		}
 
+		// Compute hash and difficulty
 		dataToHash := append(dataToMine, nonce...)
 		h := hash.Hash(dataToHash)
 		diff := computeDifficulty(h)
