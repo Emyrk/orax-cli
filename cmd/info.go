@@ -73,8 +73,9 @@ func info() (err error) {
 
 	fmt.Printf("\n%-20s %s\n", "UserID", userID)
 	fmt.Printf("%-20s %s\n", "Email", userInfo.User.Email)
-	fmt.Printf("%-20s %s\n", "Payout Address", userInfo.User.PayoutAddress)
 	fmt.Printf("%-20s %s\n", "Registration Date", userInfo.User.RegistrationDate.Format(time.RFC3339))
+	fmt.Printf("%-20s %s\n", "Payout Address", userInfo.User.PayoutAddress)
+	fmt.Printf("%-20s %s PNT\n", "Balance", humanize.CommafWithDigits(userInfo.User.Balance/1e8, 8))
 	fmt.Printf("\nMiners:\n\n")
 	// Miners
 	minersTableData := make([][]string, len(userInfo.Miners))

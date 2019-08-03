@@ -37,6 +37,7 @@ type User struct {
 	RegistrationDate time.Time `json:"registrationDate"`
 	Email            string    `json:"email"`
 	PayoutAddress    string    `json:"payoutAddress"`
+	Balance          float64   `json:"balance"`
 }
 
 type Miner struct {
