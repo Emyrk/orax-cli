@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/mail"
 
+	"github.com/FactomProject/factom"
 	"github.com/manifoldco/promptui"
 	"gitlab.com/pbernier3/orax-cli/api"
 )
@@ -44,7 +45,12 @@ func askPassword() (password string, err error) {
 func askPayoutAddress() (address string, err error) {
 	prompt := promptui.Prompt{
 		Label: "Address to pay rewards to",
-		// TODO Validate: validate,
+		Validate: func(input string) error {
+			if factom.IsValidAddress(input) && input[0:2] == "FA" {
+				return nil
+			}
+			return errors.New("Invalid FCT address")
+		},
 	}
 
 	address, err = prompt.Run()
@@ -54,6 +60,12 @@ func askPayoutAddress() (address string, err error) {
 func askMinerAlias() (alias string, err error) {
 	prompt := promptui.Prompt{
 		Label: "Miner alias (name of the machine for instance)",
+		Validate: func(input string) error {
+			if input == "" {
+				return errors.New("Alias cannot be empty")
+			}
+			return nil
+		},
 	}
 
 	alias, err = prompt.Run()

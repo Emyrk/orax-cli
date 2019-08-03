@@ -81,7 +81,7 @@ func getOraxUser() (err error) {
 }
 
 func registerMiner() error {
-	log.Info("Registering this machine as a miner with your account:")
+	log.Info("Registering this machine as a miner linked towith your account:")
 
 	alias, err := askMinerAlias()
 	if err != nil {
