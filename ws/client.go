@@ -42,15 +42,19 @@ type Client struct {
 	NoncePrefix []byte // Not the best place to store but simple and convenient
 }
 
-var u, _ = url.Parse("ws://localhost:8080/miner")
+var orchestratorURL string
 
 func init() {
+	// Override endpoint with env variable
 	if os.Getenv("ORAX_ORCHESTRATOR_ENDPOINT") != "" {
-		url, err := url.ParseRequestURI(os.Getenv("ORAX_ORCHESTRATOR_ENDPOINT"))
+		_, err := url.ParseRequestURI(os.Getenv("ORAX_ORCHESTRATOR_ENDPOINT"))
 		if err != nil {
 			log.Fatalf("Failed to parse ORAX_ORCHESTRATOR_ENDPOINT: %s", err)
 		}
-		u = url
+		orchestratorURL = os.Getenv("ORAX_ORCHESTRATOR_ENDPOINT")
+	} else if orchestratorURL == "" {
+		// If not set at build time fallback to local dev endpoint
+		orchestratorURL = "ws://localhost:8080/miner"
 	}
 }
 
@@ -70,7 +74,7 @@ func (cli *Client) connect() {
 			Proxy:             http.ProxyFromEnvironment,
 			HandshakeTimeout:  45 * time.Second,
 			EnableCompression: true}
-		c, resp, err := d.Dial(u.String(), header)
+		c, resp, err := d.Dial(orchestratorURL, header)
 
 		if resp != nil {
 			if resp.StatusCode == 400 {

@@ -10,16 +10,21 @@ import (
 	"gopkg.in/resty.v1"
 )
 
-var OraxApiBaseUrl = "http://localhost:2666"
+var oraxAPIBaseURL string
 
 var log = common.GetLog()
 
 func init() {
+	// Override endpoint with env variable
 	if os.Getenv("ORAX_API_ENDPOINT") != "" {
 		_, err := url.ParseRequestURI(os.Getenv("ORAX_API_ENDPOINT"))
 		if err != nil {
 			log.Fatalf("Failed to parse ORAX_API_ENDPOINT: %s", err)
 		}
+		oraxAPIBaseURL = os.Getenv("ORAX_API_ENDPOINT")
+	} else if oraxAPIBaseURL == "" {
+		// If not set at build time fallback to local dev endpoint
+		oraxAPIBaseURL = "http://localhost:2666"
 	}
 }
 
@@ -35,7 +40,7 @@ func RegisterUser(email string, password string, payoutAddress string) (*Registe
 		}).
 		SetError(&ApiError{}).
 		SetResult(&RegisterUserResult{}).
-		Post(OraxApiBaseUrl + "/user")
+		Post(oraxAPIBaseURL + "/user")
 
 	if err != nil {
 		return nil, err
@@ -56,7 +61,7 @@ func Authenticate(id string, password string) (*AuthenticateResult, error) {
 		SetBasicAuth(id, password).
 		SetError(&ApiError{}).
 		SetResult(&AuthenticateResult{}).
-		Post(OraxApiBaseUrl + "/user/auth")
+		Post(oraxAPIBaseURL + "/user/auth")
 
 	if err != nil {
 		return nil, err
@@ -81,7 +86,7 @@ func RegisterMiner(alias string) (*RegisterMinerResult, error) {
 		}).
 		SetError(&ApiError{}).
 		SetResult(&RegisterMinerResult{}).
-		Post(OraxApiBaseUrl + "/miner")
+		Post(oraxAPIBaseURL + "/miner")
 
 	if err != nil {
 		return nil, err
@@ -100,7 +105,7 @@ func GetUserInfo(id string) (*UserInfoResult, error) {
 		SetAuthToken(viper.GetString("jwt")).
 		SetError(&ApiError{}).
 		SetResult(&UserInfoResult{}).
-		Get(OraxApiBaseUrl + "/user/" + id)
+		Get(oraxAPIBaseURL + "/user/" + id)
 
 	if err != nil {
 		return nil, err
