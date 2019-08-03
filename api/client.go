@@ -33,7 +33,7 @@ func RegisterUser(email string, password string, payoutAddress string) (*Registe
 			"payoutAddress": payoutAddress,
 			"password":      password,
 		}).
-		SetError(&Error{}).
+		SetError(&ApiError{}).
 		SetResult(&RegisterUserResult{}).
 		Post(OraxApiBaseUrl + "/user")
 
@@ -42,7 +42,7 @@ func RegisterUser(email string, password string, payoutAddress string) (*Registe
 	}
 
 	if resp.IsError() {
-		errorMsg := resp.Error().(*Error).Message
+		errorMsg := resp.Error().(*ApiError).Message
 		return nil, fmt.Errorf("%s: %s", resp.Status(), errorMsg)
 	}
 
@@ -54,7 +54,7 @@ func RegisterUser(email string, password string, payoutAddress string) (*Registe
 func Authenticate(id string, password string) (*AuthenticateResult, error) {
 	resp, err := resty.R().
 		SetBasicAuth(id, password).
-		SetError(&Error{}).
+		SetError(&ApiError{}).
 		SetResult(&AuthenticateResult{}).
 		Post(OraxApiBaseUrl + "/user/auth")
 
@@ -63,7 +63,7 @@ func Authenticate(id string, password string) (*AuthenticateResult, error) {
 	}
 
 	if resp.IsError() {
-		errorMsg := resp.Error().(*Error).Message
+		errorMsg := resp.Error().(*ApiError).Message
 		return nil, fmt.Errorf("%s: %s", resp.Status(), errorMsg)
 	}
 
@@ -79,7 +79,7 @@ func RegisterMiner(alias string) (*RegisterMinerResult, error) {
 		SetBody(map[string]string{
 			"alias": alias,
 		}).
-		SetError(&Error{}).
+		SetError(&ApiError{}).
 		SetResult(&RegisterMinerResult{}).
 		Post(OraxApiBaseUrl + "/miner")
 
@@ -88,27 +88,31 @@ func RegisterMiner(alias string) (*RegisterMinerResult, error) {
 	}
 
 	if resp.IsError() {
-		errorMsg := resp.Error().(*Error).Message
+		errorMsg := resp.Error().(*ApiError).Message
 		return nil, fmt.Errorf("%s: %s", resp.Status(), errorMsg)
 	}
 
 	return resp.Result().(*RegisterMinerResult), nil
 }
 
-// func GetUser(id string) (*User, error) {
-// 	resp, err := resty.R().
-// 		SetError(&Error{}).
-// 		SetResult(&User{}).
-// 		Get(OraxApiBaseUrl + "/user/" + id)
+func GetUserInfo(id string) (*UserInfoResult, error) {
+	resp, err := resty.R().
+		SetAuthToken(viper.GetString("jwt")).
+		SetError(&ApiError{}).
+		SetResult(&UserInfoResult{}).
+		Get(OraxApiBaseUrl + "/user/" + id)
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	if err != nil {
+		return nil, err
+	}
 
-// 	if resp.IsError() {
-// 		errorMsg := resp.Error().(*Error).Message
-// 		return nil, fmt.Errorf("%s: %s", resp.Status(), errorMsg)
-// 	}
+	if resp.IsError() {
+		apiError := resp.Error().(*ApiError)
+		if apiError.Code == 1 {
+			return nil, ErrAuth
+		}
+		return nil, fmt.Errorf("%s: %s", resp.Status(), apiError.Message)
+	}
 
-// 	return resp.Result().(*User), nil
-// }
+	return resp.Result().(*UserInfoResult), nil
+}
