@@ -29,8 +29,6 @@ func init() {
 }
 
 func RegisterUser(email string, password string, payoutAddress string) (*RegisterUserResult, error) {
-	log.Info("Registering new Orax user...")
-
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(map[string]string{
@@ -76,8 +74,6 @@ func Authenticate(id string, password string) (*AuthenticateResult, error) {
 }
 
 func RegisterMiner(alias string) (*RegisterMinerResult, error) {
-	log.Info("Registering new miner with Orax...")
-
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetAuthToken(viper.GetString("jwt")).

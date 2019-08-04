@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -19,11 +21,12 @@ var registerCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := viper.ReadInConfig()
 		if err == nil && viper.IsSet("miner_id") {
-			log.Warnf("A miner identity is already configured in [%s]. Aborting registration.", configFilePath)
+			color.Red("A miner identity is already configured in [%s]. Aborting registration.", configFilePath)
 		} else {
 			err := register()
 			if err != nil {
-				log.Error(err)
+				fmt.Printf("\n")
+				color.Red(err.Error())
 				os.Exit(1)
 			}
 		}
@@ -46,7 +49,7 @@ func register() error {
 		return err
 	}
 
-	log.Infof("Registration completed. Config stored in [%s]", configFilePath)
+	color.Green("\nRegistration completed. Config stored in [%s]\n\n", configFilePath)
 
 	return nil
 }
@@ -64,14 +67,20 @@ func getOraxUser() (err error) {
 	}
 
 	var userID, jwt string
+	fmt.Printf("\n")
 	if i == 0 {
 		userID, jwt, err = newOraxUser()
+		if err != nil {
+			return err
+		}
+		color.Green("\nNew Orax user registered successfully.\n\n")
 	} else {
 		userID, jwt, err = existingOraxUser()
-	}
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+		color.Green("\nSuccessfully authenticated.\n\n")
 	}
 
 	viper.Set("user_id", userID)
@@ -81,7 +90,7 @@ func getOraxUser() (err error) {
 }
 
 func registerMiner() error {
-	log.Info("Registering this machine as a miner linked towith your account:")
+	fmt.Println("Registering this machine as a miner linked to your account:")
 
 	alias, err := askMinerAlias()
 	if err != nil {

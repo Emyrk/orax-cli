@@ -6,6 +6,7 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
+	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -19,7 +20,8 @@ var infoCmd = &cobra.Command{
 		viper.ReadInConfig()
 		err := info()
 		if err != nil {
-			log.Error(err)
+			fmt.Printf("\n")
+			color.Red(err.Error())
 			os.Exit(1)
 		}
 	},
@@ -34,20 +36,22 @@ func info() (err error) {
 	jwt := viper.GetString("jwt")
 
 	if jwt == "" || userID == "" {
-		fmt.Println("Log in:")
+		fmt.Printf("\nLog in:\n\n")
 		userID, jwt, err = existingOraxUser()
 		if err != nil {
 			return err
 		}
 		viper.Set("user_id", userID)
 		viper.Set("jwt", jwt)
+
+		fmt.Printf("\n")
 	}
 
 	userInfo, err := api.GetUserInfo(userID)
 	if err != nil {
 		if err == api.ErrAuth {
 			// The JWT may be expired, prompt for credentials
-			fmt.Println("Log in:")
+			fmt.Printf("\nLog in:\n\n")
 			userID, jwt, err = existingOraxUser()
 			if err != nil {
 				return err
@@ -55,6 +59,8 @@ func info() (err error) {
 
 			viper.Set("user_id", userID)
 			viper.Set("jwt", jwt)
+
+			fmt.Printf("\n")
 
 			userInfo, err = api.GetUserInfo(userID)
 			if err != nil {
@@ -71,13 +77,15 @@ func info() (err error) {
 		return err
 	}
 
-	fmt.Printf("\n%-20s %s\n", "UserID", userID)
-	fmt.Printf("%-20s %s\n", "Email", userInfo.User.Email)
-	fmt.Printf("%-20s %s\n", "Registration Date", userInfo.User.RegistrationDate.Format(time.RFC3339))
-	fmt.Printf("%-20s %s\n", "Payout Address", userInfo.User.PayoutAddress)
-	fmt.Printf("%-20s %s PNT\n", "Balance", humanize.CommafWithDigits(userInfo.User.Balance/1e8, 8))
-	fmt.Printf("\nMiners:\n\n")
+	fmt.Printf("==============================================\n")
+	fmt.Printf("%-22s %s\n", "UserID", userID)
+	fmt.Printf("%-22s %s\n", "Email", userInfo.User.Email)
+	fmt.Printf("%-22s %s\n", "Registration Date", userInfo.User.RegistrationDate.Format(time.RFC3339))
+	fmt.Printf("%-22s %s\n", "Payout Address", userInfo.User.PayoutAddress)
+	fmt.Printf("%-22s %s PNT\n", "Balance", humanize.CommafWithDigits(userInfo.User.Balance/1e8, 8))
+	fmt.Printf("==============================================\n")
 	// Miners
+	fmt.Printf("\nMiners:\n\n")
 	minersTableData := make([][]string, len(userInfo.Miners))
 	for i, miner := range userInfo.Miners {
 		minersTableData[i] = []string{

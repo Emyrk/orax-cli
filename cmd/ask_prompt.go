@@ -59,7 +59,7 @@ func askPayoutAddress() (address string, err error) {
 
 func askMinerAlias() (alias string, err error) {
 	prompt := promptui.Prompt{
-		Label: "Miner alias (name of the machine for instance)",
+		Label: "Miner alias",
 		Validate: func(input string) error {
 			if input == "" {
 				return errors.New("Alias cannot be empty")
@@ -110,8 +110,6 @@ func newOraxUser() (userID string, jwt string, err error) {
 	if err != nil {
 		return "", "", fmt.Errorf("Failed to register a new Orax user: %s", err)
 	}
-
-	log.Info("New Orax user registered.")
 
 	return user.ID, user.JWT, nil
 }
