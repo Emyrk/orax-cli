@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -24,8 +25,6 @@ func init() {
 	rootCmd.Version = common.Version
 	rootCmd.PersistentFlags().StringVarP(&configFilePath, "config", "c", "", "Config file path (default $HOME/.orax/config.yml)")
 }
-
-var log = common.GetLog()
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {

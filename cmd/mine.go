@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
 
+	"github.com/fatih/color"
 	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
@@ -27,8 +29,8 @@ var mineCmd = &cobra.Command{
 		err := viper.ReadInConfig()
 
 		if err != nil {
-			log.Warn("No config file found.")
-			log.Warn("To start mining, register your miner with command `orax-cli register`")
+			color.Red("No config file found.")
+			color.Red("To start mining, register your miner with the command `orax-cli register`")
 		} else {
 			os.Exit(mine())
 		}
@@ -51,16 +53,15 @@ func mine() int {
 
 	defer func() {
 		close(stopOraxCli) // Stop orax cli.
-		log.Info("Waiting for Orax cli to stop...")
+		fmt.Println("\n\nWaiting for Orax cli to stop...")
 		<-oraxCliDone // Wait for orax cli to stop.
-		log.Info("Orax cli stopped.")
+		color.Green("\nOrax cli stopped.\n\n")
 	}()
 
 	defer signal.Reset()
 	// Wait for interrupt signal or unexpected termination of orax cli
 	select {
-	case sig := <-sigs:
-		log.WithField("signal", sig).Info("Interrupt signal received. Shutting down.")
+	case <-sigs:
 		return 0
 	case <-oraxCliDone: // Closed if Orax cli exits prematurely.
 	}
