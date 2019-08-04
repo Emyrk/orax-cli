@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"crypto/rand"
+	"fmt"
 	"runtime"
 	"time"
 
@@ -27,6 +28,8 @@ func init() {
 }
 
 func bench() {
+	fmt.Printf("\nRunning benchmark for %s...\n\n", duration)
+
 	hash.InitLXR()
 	oprHash := make([]byte, 32)
 	rand.Read(oprHash)
@@ -35,14 +38,16 @@ func bench() {
 	miner := mining.NewSuperMiner(nbMiners)
 
 	// Start miners
-	log.Infof("Starting benchmarking for %s", duration)
 	miner.Mine(oprHash, []byte{19, 89}, 3)
 	ticker := time.NewTicker(duration)
 	<-ticker.C
 	miningSession := miner.Stop()
 
 	// Print results
-	log.Infof("Duration: %s", miningSession.Duration)
-	log.Infof("Total ops: %d\n", miningSession.TotalOps)
-	log.Infof("Hashrate: %d ops/s\n", uint64(float64(miningSession.TotalOps)/miningSession.Duration.Seconds()))
+	fmt.Printf("\n===================\n")
+	fmt.Printf("Benchmarck results:\n")
+	fmt.Printf("===================\n")
+	fmt.Printf("%-15s %s\n", "Duration", miningSession.Duration)
+	fmt.Printf("%-15s %d\n", "Total hashes", miningSession.TotalOps)
+	fmt.Printf("%-15s %d hash/s\n", "Hashrate", uint64(float64(miningSession.TotalOps)/miningSession.Duration.Seconds()))
 }
