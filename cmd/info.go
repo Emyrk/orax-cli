@@ -124,7 +124,7 @@ func info() (err error) {
 	}
 	statsTable := tablewriter.NewWriter(os.Stdout)
 	statsTable.SetAlignment(tablewriter.ALIGN_RIGHT)
-	statsTable.SetHeader([]string{"Height", "Miners", "Pool hashrate", "Pool Reward", "User hashrate", "User share", "User reward"})
+	statsTable.SetHeader([]string{"Block", "Miners", "Pool hashrate", "Pool Reward", "User hashrate", "User share", "User reward"})
 	statsTable.AppendBulk(statsTableData)
 	statsTable.Render()
 

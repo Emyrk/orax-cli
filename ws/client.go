@@ -54,7 +54,7 @@ func init() {
 		orchestratorURL = os.Getenv("ORAX_ORCHESTRATOR_ENDPOINT")
 	} else if orchestratorURL == "" {
 		// If not set at build time fallback to local dev endpoint
-		orchestratorURL = "ws://localhost:8080/miner"
+		orchestratorURL = "ws://localhost:8077/miner"
 	}
 }
 
