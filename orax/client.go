@@ -110,11 +110,13 @@ func (cli *Client) submitMiningResult(windowDuration time.Duration) {
 		for i, nonce := range ms.OrderedBestNonces {
 			msm.Nonces[i] = msg.Nonce{Nonce: nonce.Nonce, Difficulty: nonce.Difficulty}
 		}
-		msm.HashRate = uint64(float64(ms.TotalOps) / ms.Duration.Seconds())
+		msm.OpCount = ms.TotalOps
+		msm.HashRate = int64(float64(ms.TotalOps) / ms.Duration.Seconds())
 
 		log.WithFields(logrus.Fields{
 			"nonces":   msm.Nonces,
 			"oprHash":  msm.OprHash,
+			"opCount":  msm.OpCount,
 			"hashRate": msm.HashRate,
 		}).Infof("Submitting mining result")
 

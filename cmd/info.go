@@ -77,13 +77,14 @@ func info() (err error) {
 		return err
 	}
 
-	fmt.Printf("==============================================\n")
+	fmt.Printf("==============================================================================\n")
 	fmt.Printf("%-22s %s\n", "UserID", userID)
 	fmt.Printf("%-22s %s\n", "Email", userInfo.User.Email)
 	fmt.Printf("%-22s %s\n", "Registration Date", userInfo.User.RegistrationDate.Format(time.RFC3339))
 	fmt.Printf("%-22s %s\n", "Payout Address", userInfo.User.PayoutAddress)
 	fmt.Printf("%-22s %s PNT\n", "Balance", humanize.CommafWithDigits(userInfo.User.Balance/1e8, 8))
-	fmt.Printf("==============================================\n")
+	fmt.Printf("==============================================================================\n")
+
 	// Miners
 	fmt.Printf("\nMiners:\n\n")
 	minersTableData := make([][]string, len(userInfo.Miners))
@@ -108,13 +109,13 @@ func info() (err error) {
 		statsTableData[i] = []string{
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.Height))),
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.NbMiners))),
-			fmt.Sprintf("%s", humanize.Comma(int64(stat.TotalHashRate))),
+			fmt.Sprintf("%s", stat.TotalHashRate.ToString()),
 			fmt.Sprintf("%s", humanize.Commaf(float64(stat.UsersReward)/1e8)),
 		}
 
 		if stat.UserDetail != nil {
 			statsTableData[i] = append(statsTableData[i],
-				fmt.Sprintf("%s", humanize.Comma(int64(stat.UserDetail.HashRate))),
+				fmt.Sprintf("%s", stat.UserDetail.HashRate.ToString()),
 				fmt.Sprintf("%s%%", humanize.FtoaWithDigits(stat.UserDetail.Share*100, 2)),
 				fmt.Sprintf("%s", humanize.CommafWithDigits(stat.UserDetail.Reward/1e8, 8)))
 		} else {

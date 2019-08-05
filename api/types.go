@@ -2,7 +2,10 @@ package api
 
 import (
 	"errors"
+	"math/big"
 	"time"
+
+	"github.com/dustin/go-humanize"
 )
 
 var ErrAuth = errors.New("Failed required authentication")
@@ -48,19 +51,33 @@ type Miner struct {
 }
 
 type BlockStat struct {
-	Height        uint        `json:"height"`
-	NbMiners      uint        `json:"nbMiners"`
-	NbUsers       uint        `json:"nbUsers"`
-	TotalHashRate uint64      `json:"totalHashrate"`
+	Height        int64       `json:"height"`
+	NbMiners      int         `json:"nbMiners"`
+	NbUsers       int         `json:"nbUsers"`
+	TotalHashRate BigIntStr   `json:"totalHashrate"`
 	Ranks         []int       `json:"ranks"`
-	Reward        uint64      `json:"reward"`
-	OraxReward    uint64      `json:"oraxReward"`
-	UsersReward   uint64      `json:"userReward"`
+	Reward        int64       `json:"reward"`
+	OraxReward    int64       `json:"oraxReward"`
+	UsersReward   int64       `json:"usersReward"`
 	UserDetail    *UserDetail `json:"userDetail"`
 }
 
 type UserDetail struct {
-	HashRate uint64  `json:"hashrate"`
-	Share    float64 `json:"share"`
-	Reward   float64 `json:"reward"`
+	HashRate BigIntStr `json:"hashrate"`
+	Share    float64   `json:"share"`
+	Reward   float64   `json:"reward"`
+}
+
+type BigIntStr struct {
+	I string `json:"i"`
+}
+
+func (bis BigIntStr) ToString() string {
+	// Try to humaize string if not too big
+	bi := new(big.Int)
+	bi.UnmarshalText([]byte(bis.I))
+	if bi.IsInt64() {
+		return humanize.Comma(bi.Int64())
+	}
+	return bis.I
 }

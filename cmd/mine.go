@@ -29,8 +29,9 @@ var mineCmd = &cobra.Command{
 		err := viper.ReadInConfig()
 
 		if err != nil {
-			color.Red("No config file found.")
-			color.Red("To start mining, register your miner with the command `orax-cli register`")
+			color.Red("Failed to read config: %s", err)
+		} else if viper.GetString("miner_id") == "" {
+			fmt.Printf("\nTo start mining, first register your miner with the command `orax-cli register`\n\n")
 		} else {
 			os.Exit(mine())
 		}

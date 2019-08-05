@@ -38,7 +38,8 @@ type SubmitSignalMessage struct {
 type MinerSubmissionMessage struct {
 	OprHash  []byte  `json:"oprHash"`
 	Nonces   []Nonce `json:"nonces"`
-	HashRate uint64  `json:"hashRate"`
+	HashRate int64   `json:"hashRate"`
+	OpCount  uint64  `json:"opCount"`
 }
 
 type Nonce struct {
