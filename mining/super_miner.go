@@ -27,7 +27,7 @@ type MiningSession struct {
 	StartTime         time.Time
 	EndTime           time.Time
 	Duration          time.Duration
-	TotalOps          uint64
+	TotalOps          int64
 	OrderedBestNonces []*Nonce
 }
 
@@ -103,9 +103,9 @@ func (sm *SuperMiner) Stop() MiningSession {
 	return *sm.miningSession
 }
 
-func (sm *SuperMiner) computeMiningSessionResult() (uint64, []*Nonce) {
+func (sm *SuperMiner) computeMiningSessionResult() (int64, []*Nonce) {
 
-	totalOps := uint64(0)
+	totalOps := int64(0)
 	var bestNonces []*Nonce
 	for i := 0; i < len(sm.miners); i++ {
 		totalOps += sm.miners[i].opsCounter

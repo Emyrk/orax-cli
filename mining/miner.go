@@ -10,7 +10,7 @@ import (
 type Miner struct {
 	id         int
 	stop       chan int
-	opsCounter uint64
+	opsCounter int64
 	bestNonces []*Nonce
 }
 

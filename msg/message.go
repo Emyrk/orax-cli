@@ -32,14 +32,14 @@ func NewMineSignalMessage(oprHash []byte, maxNonces int) *MineSignalMessage {
 }
 
 type SubmitSignalMessage struct {
-	WindowDurationSec uint8 `json:"oprHash"`
+	WindowDurationSec int `json:"oprHash"`
 }
 
 type MinerSubmissionMessage struct {
 	OprHash  []byte  `json:"oprHash"`
 	Nonces   []Nonce `json:"nonces"`
-	HashRate int64   `json:"hashRate"`
-	OpCount  uint64  `json:"opCount"`
+	Duration int64   `json:"duration"`
+	OpCount  int64   `json:"opCount"`
 }
 
 type Nonce struct {

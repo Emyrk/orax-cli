@@ -87,46 +87,60 @@ func info() (err error) {
 
 	// Miners
 	fmt.Printf("\nMiners:\n\n")
+
+	minersTable := tablewriter.NewWriter(os.Stdout)
+	minersTable.SetHeader([]string{"", "Alias", "Registration date", "Latest instant hashrate", "Latest submission date"})
+
 	minersTableData := make([][]string, len(userInfo.Miners))
 	for i, miner := range userInfo.Miners {
 		minersTableData[i] = []string{
 			fmt.Sprintf("%d", i+1),
 			miner.Alias,
 			miner.RegistrationDate.Format(time.RFC3339),
-			humanize.Comma(int64(miner.LatestHashRate)),
+			getHashRate(miner.LatestOpCount, miner.LatestDuration),
 			miner.LatestSubmissionDate.Format(time.RFC3339),
 		}
 	}
-	minersTable := tablewriter.NewWriter(os.Stdout)
-	minersTable.SetHeader([]string{"", "Alias", "Registration date", "Latest hashrate", "Latest submission date"})
+
 	minersTable.AppendBulk(minersTableData)
 	minersTable.Render()
 
-	// Blocks
+	// Blocks stats
 	fmt.Printf("\nLatest stats:\n\n")
+
+	statsTable := tablewriter.NewWriter(os.Stdout)
+	statsTable.SetAlignment(tablewriter.ALIGN_RIGHT)
+	statsTable.SetHeader([]string{"Block", "Miners", "Pool hashrate", "Pool Reward", "User hashrate", "User share", "User reward"})
+
 	statsTableData := make([][]string, len(userInfo.Stats))
 	for i, stat := range userInfo.Stats {
 		statsTableData[i] = []string{
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.Height))),
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.NbMiners))),
-			fmt.Sprintf("%s", stat.TotalHashRate.ToString()),
+			fmt.Sprintf("%s", getHashRate(stat.TotalOpCount, stat.Duration)),
 			fmt.Sprintf("%s", humanize.Commaf(float64(stat.UsersReward)/1e8)),
 		}
 
 		if stat.UserDetail != nil {
 			statsTableData[i] = append(statsTableData[i],
-				fmt.Sprintf("%s", stat.UserDetail.HashRate.ToString()),
+				fmt.Sprintf("%s", getHashRate(stat.UserDetail.OpCount, stat.Duration)),
 				fmt.Sprintf("%s%%", humanize.FtoaWithDigits(stat.UserDetail.Share*100, 2)),
 				fmt.Sprintf("%s", humanize.CommafWithDigits(stat.UserDetail.Reward/1e8, 8)))
 		} else {
 			statsTableData[i] = append(statsTableData[i], "0", "0%", "0")
 		}
 	}
-	statsTable := tablewriter.NewWriter(os.Stdout)
-	statsTable.SetAlignment(tablewriter.ALIGN_RIGHT)
-	statsTable.SetHeader([]string{"Block", "Miners", "Pool hashrate", "Pool Reward", "User hashrate", "User share", "User reward"})
 	statsTable.AppendBulk(statsTableData)
 	statsTable.Render()
 
 	return nil
+}
+
+func getHashRate(opCount int64, duration int64) string {
+	if duration == 0 {
+		return "0"
+	}
+
+	hashrate := int64(float64(opCount) / (float64(duration) / 1e9))
+	return humanize.Comma(hashrate)
 }
