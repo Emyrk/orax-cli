@@ -2,7 +2,6 @@ package orax
 
 import (
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -52,23 +51,10 @@ func (cli *Client) Start(config ClientConfig, stop <-chan struct{}) <-chan struc
 }
 
 func (cli *Client) stop() {
-	wg := new(sync.WaitGroup)
-
-	wg.Add(1)
-	go func() {
-		cli.wscli.Stop()
-		wg.Done()
-	}()
-
-	if cli.miner.IsRunning() {
-		wg.Add(1)
-		go func() {
-			cli.miner.Stop()
-			wg.Done()
-		}()
-	}
-
-	wg.Wait()
+	// Try to submit immediately what the miner was working on, if anything
+	cli.submitMiningResult(time.Duration(0))
+	// Stop the webserver
+	cli.wscli.Stop()
 }
 
 func (cli *Client) listenSignals() {
@@ -131,7 +117,5 @@ func (cli *Client) submitMiningResult(windowDuration time.Duration) {
 			<-timer.C
 			cli.wscli.Send(data)
 		}
-	} else {
-		log.Info("Skipping submission as no mining session was running.")
 	}
 }

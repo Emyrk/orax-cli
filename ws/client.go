@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"gitlab.com/pbernier3/orax-cli/common"
@@ -40,6 +41,7 @@ type Client struct {
 	done        chan struct{}
 	conn        *websocket.Conn
 	NoncePrefix []byte // Not the best place to store but simple and convenient
+	sendMux     sync.Mutex
 }
 
 var orchestratorURL string
@@ -63,7 +65,6 @@ func (cli *Client) connect() {
 	minerSecret := viper.GetString("miner_secret")
 	log.Infof("Connecting to Orax as [%s]...", id)
 
-	expBackOff := exponentialBackOff()
 	header := http.Header{
 		"Authorization": []string{id + ":" + minerSecret},
 		"Version":       []string{common.Version[1:]}}
@@ -100,7 +101,7 @@ func (cli *Client) connect() {
 		cli.conn = c
 		cli.NoncePrefix = noncePrefix
 		return err
-	}, expBackOff, func(err error, duration time.Duration) {
+	}, exponentialBackOff(), func(err error, duration time.Duration) {
 		log.Warnf("Failed to connected. Retrying in %s", duration)
 	})
 
@@ -132,7 +133,10 @@ func (cli *Client) Stop() {
 
 		// Cleanly close the connection by sending a close message and then
 		// waiting (with timeout) for the server to close the connection.
+		cli.sendMux.Lock()
 		err := cli.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+		cli.sendMux.Unlock()
+
 		if err != nil {
 			log.Error("Failed to gracefully disconnect: ", err)
 			return
@@ -169,10 +173,12 @@ func (cli *Client) read() {
 }
 
 func (cli *Client) Send(message []byte) {
-	go func() {
-		err := cli.conn.WriteMessage(websocket.BinaryMessage, message)
-		if err != nil {
-			log.Error("write:", err)
-		}
-	}()
+	cli.sendMux.Lock()
+	err := cli.conn.WriteMessage(websocket.BinaryMessage, message)
+	cli.sendMux.Unlock()
+
+	if err != nil {
+		log.Error("write:", err)
+	}
+
 }
