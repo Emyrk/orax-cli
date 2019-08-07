@@ -1,4 +1,4 @@
-REVISION = $(shell git describe --abbrev=0 --tags)
+REVISION = $(shell git describe  --tags)
 $(info    Make orax-cli $(REVISION))
 
 LDFLAGS := "-X gitlab.com/pbernier3/orax-cli/common.Version=$(REVISION)
