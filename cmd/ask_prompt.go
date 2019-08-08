@@ -42,6 +42,22 @@ func askPassword() (password string, err error) {
 	return password, err
 }
 
+func askPasswordConfirmation(password string) (err error) {
+	prompt := promptui.Prompt{
+		Label: "Password Confirmation",
+		Mask:  '*',
+		Validate: func(input string) error {
+			if input != password {
+				return errors.New("Password confirmation does not match")
+			}
+			return nil
+		},
+	}
+
+	_, err = prompt.Run()
+	return err
+}
+
 func askPayoutAddress() (address string, err error) {
 	prompt := promptui.Prompt{
 		Label: "Address to pay rewards to",
@@ -98,6 +114,10 @@ func newOraxUser() (userID string, jwt string, err error) {
 		return "", "", err
 	}
 	password, err := askPassword()
+	if err != nil {
+		return "", "", err
+	}
+	err = askPasswordConfirmation(password)
 	if err != nil {
 		return "", "", err
 	}
