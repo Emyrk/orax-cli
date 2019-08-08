@@ -50,8 +50,7 @@ type Miner struct {
 
 type BlockStat struct {
 	Height       int64       `json:"height"`
-	NbMiners     int         `json:"nbMiners"`
-	NbUsers      int         `json:"nbUsers"`
+	MinerCount   int         `json:"minerCount"`
 	Duration     int64       `json:"duration"`
 	TotalOpCount int64       `json:"totalOpCount"`
 	Ranks        []int       `json:"ranks"`

@@ -116,7 +116,7 @@ func info() (err error) {
 	for i, stat := range userInfo.Stats {
 		statsTableData[i] = []string{
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.Height))),
-			fmt.Sprintf("%s", humanize.Comma(int64(stat.NbMiners))),
+			fmt.Sprintf("%s", humanize.Comma(int64(stat.MinerCount))),
 			fmt.Sprintf("%s", getHashRate(stat.TotalOpCount, stat.Duration)),
 			fmt.Sprintf("%s", humanize.Commaf(float64(stat.UsersReward)/1e8)),
 		}
