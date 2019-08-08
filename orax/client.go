@@ -51,8 +51,11 @@ func (cli *Client) Start(config ClientConfig, stop <-chan struct{}) <-chan struc
 }
 
 func (cli *Client) stop() {
-	// Try to submit immediately what the miner was working on, if anything
-	cli.submitMiningResult(time.Duration(0))
+	// Try to submit immediately what the miner was working on
+	// If we are actually connected to the orchestrator
+	if cli.wscli.Connected() {
+		cli.submitMiningResult(time.Duration(0))
+	}
 	// Stop the webserver
 	cli.wscli.Stop()
 }

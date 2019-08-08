@@ -172,6 +172,10 @@ func (cli *Client) read() {
 	}
 }
 
+func (cli *Client) Connected() bool {
+	return cli.conn != nil
+}
+
 func (cli *Client) Send(message []byte) {
 	cli.sendMux.Lock()
 	err := cli.conn.WriteMessage(websocket.BinaryMessage, message)
