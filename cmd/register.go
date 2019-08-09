@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
@@ -54,7 +57,32 @@ func register() error {
 	return nil
 }
 
-func getOraxUser() (err error) {
+func getAccountChoice() (string, error) {
+	if runtime.GOOS == "windows" {
+		prompt := promptui.Prompt{
+			Label: "Use (n)ew account or (e)xisting account? [n/e]",
+			Validate: func(input string) error {
+				choice := strings.ToLower(input)
+				if choice == "e" || choice == "n" || choice == "new" || choice == "existing" {
+					return nil
+				}
+				return errors.New("Invalid choice")
+			},
+		}
+
+		choice, err := prompt.Run()
+		if err != nil {
+			return "", err
+		}
+
+		if choice == "n" {
+			return "new", nil
+		} else if choice == "e" {
+			return "existing", nil
+		}
+		return choice, nil
+	}
+
 	prompt := promptui.Select{
 		Label: "Register miner with",
 		Items: []string{"a new Orax account", "an existing Orax account"},
@@ -63,12 +91,24 @@ func getOraxUser() (err error) {
 	i, _, err := prompt.Run()
 
 	if err != nil {
+		return "", err
+	}
+
+	if i == 0 {
+		return "new", nil
+	}
+	return "existing", nil
+}
+
+func getOraxUser() (err error) {
+	choice, err := getAccountChoice()
+	if err != nil {
 		return err
 	}
 
 	var userID, jwt string
 	fmt.Printf("\n")
-	if i == 0 {
+	if choice == "new" {
 		userID, jwt, err = newOraxUser()
 		if err != nil {
 			return err
