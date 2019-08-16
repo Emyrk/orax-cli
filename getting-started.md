@@ -28,7 +28,7 @@ Start by creating a new account. You only need an email address and a Factoid ad
 ./orax-cli mine
 # You probably want to start the mining process in the background
 # and save logs into a file
-./orax-cli mine &>> orax-cli.log &
+nohup ./orax-cli mine >> orax-cli.log &
 ```
 
 That's it, your machine is now connected to Orax and will start mining as soon as work is available. Please note that at the first launch the LXR hash needs to initialized which can take 10 minutes or more depending on your machine. This is a one time operation.
