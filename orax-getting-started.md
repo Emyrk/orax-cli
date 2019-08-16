@@ -10,9 +10,9 @@ Joining Orax is only possible on invitation. You will need your email address to
 
 Get the binary for your platform:
 
-- Linux: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli-test/orax-cli-v0.2.2-test
-- MacOs: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli-test/orax-cli-v0.2.2-test.app
-- Windows: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli-test/orax-cli-v0.2.2-test.exe
+- Linux: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.4
+- MacOs: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.4.app
+- Windows: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.4.exe
 
 ## Sign up
 
@@ -26,9 +26,14 @@ Start by creating a new account. You only need an email address and a Factoid ad
 
 ```bash
 ./orax-cli mine
+```
+
+```bash
+./orax-cli mine
 # You probably want to start the mining process in the background
 # and save logs into a file
 nohup ./orax-cli mine >> orax-cli.log &
+# or you may use your favorite process manager or supervisor
 ```
 
 That's it, your machine is now connected to Orax and will start mining as soon as work is available. Please note that at the first launch the LXR hash needs to initialized which can take 10 minutes or more depending on your machine. This is a one time operation.
