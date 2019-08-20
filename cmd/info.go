@@ -89,7 +89,7 @@ func info() (err error) {
 	fmt.Printf("\nMiners:\n\n")
 
 	minersTable := tablewriter.NewWriter(os.Stdout)
-	minersTable.SetHeader([]string{"", "Alias", "Registration date", "Latest instant hashrate", "Latest submission date"})
+	minersTable.SetHeader([]string{"", "Alias", "Registration date", "Latest instant hashrate", "Latest submission"})
 
 	minersTableData := make([][]string, len(userInfo.Miners))
 	for i, miner := range userInfo.Miners {
@@ -98,7 +98,7 @@ func info() (err error) {
 			miner.Alias,
 			miner.RegistrationDate.Format(time.RFC3339),
 			getHashRate(miner.LatestOpCount, miner.LatestDuration),
-			miner.LatestSubmissionDate.Format(time.RFC3339),
+			humanize.Time(miner.LatestSubmissionDate),
 		}
 	}
 
