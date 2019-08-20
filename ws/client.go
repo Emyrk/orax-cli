@@ -89,6 +89,13 @@ func (cli *Client) connect() {
 				return backoff.Permanent(errors.New("Failed to authenticate with orax orchestrator"))
 			} else if resp.StatusCode == 409 {
 				return backoff.Permanent(errors.New("Already connected with the same miner id"))
+			} else if resp.StatusCode >= 400 {
+				bytes, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					return fmt.Errorf("Unexpected error: %s", err)
+				}
+				msg := string(bytes)
+				return errors.New(msg)
 			}
 
 			// Decode assigned nonce prefix
@@ -102,7 +109,7 @@ func (cli *Client) connect() {
 		cli.NoncePrefix = noncePrefix
 		return err
 	}, exponentialBackOff(), func(err error, duration time.Duration) {
-		log.Warnf("Failed to connected. Retrying in %s", duration)
+		log.Warnf("Failed to connect. Retrying in %s", duration)
 	})
 
 	if err != nil {
