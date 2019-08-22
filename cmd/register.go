@@ -29,7 +29,7 @@ var registerCmd = &cobra.Command{
 		} else {
 			// Write a blank config file early to verify it's possible
 			// (permission, file extension...)
-			err = viper.SafeWriteConfig()
+			err = viper.WriteConfig()
 			if err != nil {
 				color.Red(err.Error())
 				os.Exit(1)
