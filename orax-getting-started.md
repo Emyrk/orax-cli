@@ -10,9 +10,9 @@ Joining Orax is only possible on invitation. You will need your email address to
 
 Get the binary for your platform:
 
-- Linux: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.4
-- MacOs: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.4.app
-- Windows: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.4.exe
+- Linux: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.5
+- MacOs: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.5.app
+- Windows: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.5.exe
 
 ## Sign up
 

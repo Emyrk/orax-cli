@@ -23,9 +23,17 @@ var registerCmd = &cobra.Command{
 	Short: "Register miner",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := viper.ReadInConfig()
+
 		if err == nil && viper.IsSet("miner_id") {
 			color.Red("A miner identity is already configured in [%s]. Aborting registration.", configFilePath)
 		} else {
+			// Write a blank config file early to verify it's possible
+			// (permission, file extension...)
+			err = viper.SafeWriteConfig()
+			if err != nil {
+				color.Red(err.Error())
+				os.Exit(1)
+			}
 			err := register()
 			if err != nil {
 				fmt.Printf("\n")
