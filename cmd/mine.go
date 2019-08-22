@@ -19,7 +19,7 @@ var nbMiners int
 
 func init() {
 	rootCmd.AddCommand(mineCmd)
-	mineCmd.Flags().IntVarP(&nbMiners, "nbminer", "n", runtime.NumCPU(), "Number of concurrent miners. Default to number of logical CPUs. ")
+	mineCmd.Flags().IntVarP(&nbMiners, "nbminer", "n", runtime.NumCPU(), "Number of concurrent miners. Default to number of logical CPUs.")
 }
 
 var mineCmd = &cobra.Command{

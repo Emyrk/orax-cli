@@ -14,8 +14,13 @@ import (
 	"gitlab.com/pbernier3/orax-cli/api"
 )
 
+var usernameFlag, passwordFlag, aliasFlag string
+
 func init() {
 	rootCmd.AddCommand(registerCmd)
+	registerCmd.Flags().StringVarP(&usernameFlag, "username", "u", "", "Orax account username (email).")
+	registerCmd.Flags().StringVarP(&passwordFlag, "password", "p", "", "Orax account password.")
+	registerCmd.Flags().StringVarP(&aliasFlag, "alias", "a", "", "Miner alias.")
 }
 
 var registerCmd = &cobra.Command{
@@ -34,6 +39,7 @@ var registerCmd = &cobra.Command{
 				color.Red(err.Error())
 				os.Exit(1)
 			}
+
 			err := register()
 			if err != nil {
 				fmt.Printf("\n")
@@ -45,17 +51,48 @@ var registerCmd = &cobra.Command{
 }
 
 func register() error {
+	if usernameFlag != "" && passwordFlag != "" && aliasFlag != "" {
+		return registerNonInteractive()
+	}
+
+	return registerInteractive()
+
+}
+
+func registerNonInteractive() error {
+	result, err := api.Authenticate(usernameFlag, passwordFlag)
+	if err != nil {
+		return fmt.Errorf("Failed to authenticate: %s", err)
+	}
+	color.Green("\nSuccessfully authenticated.")
+
+	viper.Set("user_id", result.ID)
+	viper.Set("jwt", result.JWT)
+
+	err = registerMiner(aliasFlag)
+	if err != nil {
+		return err
+	}
+
+	return saveConfiguration()
+}
+
+func registerInteractive() error {
 	err := getOraxUser()
 	if err != nil {
 		return err
 	}
 
-	err = registerMiner()
+	err = registerMinerPrompt()
 	if err != nil {
 		return err
 	}
 
-	err = viper.WriteConfig()
+	return saveConfiguration()
+}
+
+func saveConfiguration() error {
+	err := viper.WriteConfig()
 	if err != nil {
 		return err
 	}
@@ -137,7 +174,7 @@ func getOraxUser() (err error) {
 	return nil
 }
 
-func registerMiner() error {
+func registerMinerPrompt() error {
 	fmt.Println("Registering this machine as a miner linked to your account:")
 
 	alias, err := askMinerAlias()
@@ -145,6 +182,10 @@ func registerMiner() error {
 		return err
 	}
 
+	return registerMiner(alias)
+}
+
+func registerMiner(alias string) error {
 	miner, err := api.RegisterMiner(alias)
 	if err != nil {
 		return err
