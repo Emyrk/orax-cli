@@ -28,7 +28,7 @@ func exponentialBackOff() *backoff.ExponentialBackOff {
 		RandomizationFactor: 0.5,
 		Multiplier:          2,
 		MaxInterval:         1 * time.Minute,
-		MaxElapsedTime:      72 * time.Hour,
+		MaxElapsedTime:      time.Duration(1<<63 - 1), // For ever
 		Clock:               backoff.SystemClock,
 	}
 	b.Reset()
