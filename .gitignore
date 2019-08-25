@@ -1,5 +1,6 @@
 lrxhash.seed-*
 todo.md
+build/*
 orax-cli
 orax-cli-v*
 .vscode

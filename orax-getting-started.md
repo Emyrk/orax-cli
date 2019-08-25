@@ -10,9 +10,9 @@ Joining Orax is only possible on invitation. You will need your email address to
 
 Get the binary for your platform:
 
-- Linux: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.6
-- MacOs: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.6.app
-- Windows: https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli-v0.2.6.exe
+- [Linux](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli)
+- [MacOS](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.app)
+- [Windows](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.exe)
 
 ## Sign up
 
@@ -51,6 +51,8 @@ Get info about your rewards and mining performance:
 ```bash
 ./orax-cli info
 ```
+
+You can also follow the pool statistics at [https://www.oraxpool.com/stats](https://www.oraxpool.com/stats).
 
 ## Benchmarking a machine
 
