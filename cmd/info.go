@@ -82,7 +82,7 @@ func info() (err error) {
 	fmt.Printf("%-22s %s\n", "Email", userInfo.User.Email)
 	fmt.Printf("%-22s %s\n", "Registration Date", userInfo.User.RegistrationDate.Format(time.RFC3339))
 	fmt.Printf("%-22s %s\n", "Payout Address", userInfo.User.PayoutAddress)
-	fmt.Printf("%-22s %s PNT\n", "Balance", humanize.CommafWithDigits(userInfo.User.Balance/1e8, 8))
+	fmt.Printf("%-22s %s PEG\n", "Balance", humanize.CommafWithDigits(userInfo.User.Balance/1e8, 8))
 	fmt.Printf("==============================================================================\n")
 
 	// Miners
