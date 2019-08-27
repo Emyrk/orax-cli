@@ -13,8 +13,8 @@ LDFLAGS_TEST := $(LDFLAGS) -X gitlab.com/pbernier3/orax-cli/api.oraxAPIBaseURL=h
 LDFLAGS_TEST := $(LDFLAGS_TEST) -X gitlab.com/pbernier3/orax-cli/ws.orchestratorURL=wss://orchestrator.luciap.ca/miner
 LDFLAGS_TEST := $(LDFLAGS_TEST)"
 
-dist: orax-cli.app orax-cli.exe orax-cli
-dist-test: orax-cli-test.app orax-cli-test.exe orax-cli-test
+dist: orax-cli.app orax-cli.exe orax-cli orax-cli.arm64
+dist-test: orax-cli-test.app orax-cli-test.exe orax-cli-test orax-cli-test.arm64
 
 BUILD_FOLDER="build"
 
@@ -28,6 +28,9 @@ orax-cli.exe:
 orax-cli:
 	env GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS_PROD) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)
 	cp $(BUILD_FOLDER)/orax-cli-$(REVISION) $(BUILD_FOLDER)/orax-cli
+orax-cli.arm64:
+	env GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS_PROD) -o $(BUILD_FOLDER)/orax-cli-$(REVISION).arm64
+	cp $(BUILD_FOLDER)/orax-cli-$(REVISION).arm64 $(BUILD_FOLDER)/orax-cli.arm64
 
 # Test targets
 orax-cli-test.app:
@@ -39,6 +42,9 @@ orax-cli-test.exe:
 orax-cli-test:
 	env GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS_TEST) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-test
 	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-test $(BUILD_FOLDER)/orax-cli-test
+orax-cli-test.arm64:
+	env GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS_TEST) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.arm64
+	cp $(BUILD_FOLDER)/orax-cli-test-$(REVISION).arm64 $(BUILD_FOLDER)/orax-cli-test.arm64
 
 .PHONY: clean
 

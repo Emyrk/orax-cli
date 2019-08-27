@@ -13,6 +13,7 @@ Get the binary for your platform:
 - [Linux](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli)
 - [MacOS](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.app)
 - [Windows](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.exe)
+- [Raspberry Pi 4 (ARM64)](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.arm64)
 
 ## Sign up
 
