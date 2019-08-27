@@ -32,7 +32,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.1
-	github.com/pegnet/LXRHash v0.0.0-20190804152355-33fa380b63d6
+	github.com/pegnet/LXRHash v0.0.0-20190827131157-8ee2b6d50bde
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
