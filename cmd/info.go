@@ -89,7 +89,7 @@ func info() (err error) {
 	fmt.Printf("\nMiners:\n\n")
 
 	minersTable := tablewriter.NewWriter(os.Stdout)
-	minersTable.SetHeader([]string{"", "Alias", "Registration date", "Latest instant hashrate", "Latest submission"})
+	minersTable.SetHeader([]string{"", "Alias", "Registration date", "Nominal hash rate", "Latest submission"})
 
 	minersTableData := make([][]string, len(userInfo.Miners))
 	for i, miner := range userInfo.Miners {
@@ -110,7 +110,7 @@ func info() (err error) {
 
 	statsTable := tablewriter.NewWriter(os.Stdout)
 	statsTable.SetAlignment(tablewriter.ALIGN_RIGHT)
-	statsTable.SetHeader([]string{"Block", "Miners", "Pool hashrate", "Pool Reward", "User hashrate", "User share", "User reward"})
+	statsTable.SetHeader([]string{"Block", "Miners", "Pool hash rate", "Pool Reward", "User hash rate", "User share", "User reward"})
 
 	statsTableData := make([][]string, len(userInfo.Stats))
 	for i, stat := range userInfo.Stats {
@@ -141,6 +141,6 @@ func getHashRate(opCount int64, duration int64) string {
 		return "0"
 	}
 
-	hashrate := int64(float64(opCount) / (float64(duration) / 1e9))
-	return humanize.Comma(hashrate)
+	hashRate := int64(float64(opCount) / (float64(duration) / 1e9))
+	return humanize.Comma(hashRate)
 }

@@ -49,5 +49,5 @@ func bench() {
 	fmt.Printf("===================\n")
 	fmt.Printf("%-15s %s\n", "Duration", miningSession.Duration)
 	fmt.Printf("%-15s %d\n", "Total hashes", miningSession.TotalOps)
-	fmt.Printf("%-15s %d hash/s\n", "Hashrate", uint64(float64(miningSession.TotalOps)/miningSession.Duration.Seconds()))
+	fmt.Printf("%-15s %d hash/s\n", "Hash rate", uint64(float64(miningSession.TotalOps)/miningSession.Duration.Seconds()))
 }

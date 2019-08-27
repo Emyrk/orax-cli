@@ -56,7 +56,7 @@ You can also follow the pool statistics at [https://www.oraxpool.com/stats](http
 
 ## Benchmarking a machine
 
-You can use the following command to test the mining performance of a machine:
+You can use the following command to test the mining performance of a machine and evaluate its nominal hash rate:
 
 ```bash
 ./orax-cli bench
