@@ -1,6 +1,8 @@
 package orax
 
 import (
+	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -102,13 +104,6 @@ func (cli *Client) submitMiningResult(windowDuration time.Duration) {
 		msm.OpCount = ms.TotalOps
 		msm.Duration = ms.Duration.Nanoseconds()
 
-		log.WithFields(logrus.Fields{
-			"nonces":   msm.Nonces,
-			"oprHash":  msm.OprHash,
-			"opCount":  msm.OpCount,
-			"hashRate": int64(float64(ms.TotalOps) / ms.Duration.Seconds()),
-		}).Infof("Submitting mining result")
-
 		data, err := msm.Marshal()
 		if err != nil {
 			log.Error("Failed to marshal MinerSubmissionMessage: ", err)
@@ -119,6 +114,28 @@ func (cli *Client) submitMiningResult(windowDuration time.Duration) {
 			timer := time.NewTimer(jitter)
 			<-timer.C
 			cli.wscli.Send(data)
+
+			logMiningResult(&ms)
 		}
 	}
+}
+
+func logMiningResult(ms *mining.MiningSession) {
+	nonces := make([]struct {
+		Nonce      []byte
+		Difficulty string
+	}, len(ms.OrderedBestNonces))
+
+	for i, nonce := range ms.OrderedBestNonces {
+		diffBuff := make([]byte, 8)
+		binary.BigEndian.PutUint64(diffBuff, nonce.Difficulty)
+		nonces[i].Nonce = nonce.Nonce
+		nonces[i].Difficulty = fmt.Sprintf("%x", diffBuff)
+	}
+
+	log.WithFields(logrus.Fields{
+		"nonces":   nonces,
+		"oprHash":  ms.OprHash,
+		"hashRate": int64(float64(ms.TotalOps) / ms.Duration.Seconds()),
+	}).Infof("Submitting mining result")
 }
