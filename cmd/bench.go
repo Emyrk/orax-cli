@@ -23,8 +23,8 @@ var duration time.Duration
 
 func init() {
 	rootCmd.AddCommand(benchCmd)
-	benchCmd.Flags().DurationVarP(&duration, "duration", "d", 1*time.Minute, "Duration of the benchmark")
-	benchCmd.Flags().IntVarP(&nbMiners, "nbminer", "n", runtime.NumCPU(), "Number of concurrent miners. Default to number of logical CPUs. ")
+	benchCmd.Flags().DurationVarP(&duration, "duration", "d", 1*time.Minute, "Duration of the benchmark.")
+	benchCmd.Flags().IntVarP(&nbMiners, "nbminer", "n", runtime.NumCPU(), "Number of concurrent miners. Default to number of logical CPUs.")
 }
 
 func bench() {

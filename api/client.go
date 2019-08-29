@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/spf13/viper"
 	"gitlab.com/pbernier3/orax-cli/common"
@@ -96,9 +97,11 @@ func RegisterMiner(alias string) (*RegisterMinerResult, error) {
 	return resp.Result().(*RegisterMinerResult), nil
 }
 
-func GetUserInfo(id string) (*UserInfoResult, error) {
+func GetUserInfo(id string, height int, pageSize int) (*UserInfoResult, error) {
 	resp, err := resty.R().
 		SetAuthToken(viper.GetString("jwt")).
+		SetQueryParam("height", strconv.Itoa(height)).
+		SetQueryParam("pageSize", strconv.Itoa(pageSize)).
 		SetError(&ApiError{}).
 		SetResult(&UserInfoResult{}).
 		Get(oraxAPIBaseURL + "/user/" + id)

@@ -26,9 +26,15 @@ var infoCmd = &cobra.Command{
 		}
 	},
 }
+var (
+	startHeight int
+	limit       int
+)
 
 func init() {
 	rootCmd.AddCommand(infoCmd)
+	infoCmd.Flags().IntVarP(&startHeight, "start-height", "s", 0, "Height to start to retrieve block stats at.")
+	infoCmd.Flags().IntVarP(&limit, "limit", "l", 18, "Number of blocks to retrieve statistics about.")
 }
 
 func info() (err error) {
@@ -47,7 +53,7 @@ func info() (err error) {
 		fmt.Printf("\n")
 	}
 
-	userInfo, err := api.GetUserInfo(userID)
+	userInfo, err := api.GetUserInfo(userID, startHeight, limit)
 	if err != nil {
 		if err == api.ErrAuth {
 			// The JWT may be expired, prompt for credentials
@@ -62,7 +68,7 @@ func info() (err error) {
 
 			fmt.Printf("\n")
 
-			userInfo, err = api.GetUserInfo(userID)
+			userInfo, err = api.GetUserInfo(userID, startHeight, limit)
 			if err != nil {
 				return err
 			}
