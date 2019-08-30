@@ -71,7 +71,7 @@ func (cli *Client) listenSignals() {
 
 		message, err := msg.UnmarshalMessage(received)
 		if err != nil {
-			log.Error("Failed to unmarshal message: ", err)
+			log.WithError(err).Error("Failed to unmarshal message")
 			continue
 		}
 
@@ -106,7 +106,7 @@ func (cli *Client) submitMiningResult(windowDuration time.Duration) {
 
 		data, err := msm.Marshal()
 		if err != nil {
-			log.Error("Failed to marshal MinerSubmissionMessage: ", err)
+			log.WithError(err).Error("Failed to marshal MinerSubmissionMessage")
 		} else {
 			// Randomly delay the reply within acceptable time window
 			r := rand.New(rand.NewSource(time.Now().UnixNano()))

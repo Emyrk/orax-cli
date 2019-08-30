@@ -49,4 +49,5 @@ orax-cli-test.arm64:
 .PHONY: clean
 
 clean:
+	rm -f orax-cli
 	rm -rf build

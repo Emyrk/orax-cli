@@ -145,7 +145,7 @@ func (cli *Client) Stop() {
 		cli.sendMux.Unlock()
 
 		if err != nil {
-			log.Error("Failed to gracefully disconnect: ", err)
+			log.WithError(err).Error("Failed to gracefully disconnect")
 			return
 		}
 
@@ -166,7 +166,7 @@ func (cli *Client) read() {
 
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure) {
-				log.Error("Unexpected disconnection from server: ", err)
+				log.WithError(err).Error("Unexpected disconnection from server")
 				cli.connect()
 			} else {
 				// If it was a gracefull closure, exit the loop
@@ -189,7 +189,7 @@ func (cli *Client) Send(message []byte) {
 	cli.sendMux.Unlock()
 
 	if err != nil {
-		log.Error("write:", err)
+		log.WithError(err).Error("Failure to send.")
 	}
 
 }
