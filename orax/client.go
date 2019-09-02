@@ -45,7 +45,8 @@ func (cli *Client) Start(config ClientConfig, stop <-chan struct{}) <-chan struc
 		case <-stop:
 			cli.stop()
 			close(done)
-		case <-done:
+		case <-cli.wscli.DoneReading:
+			close(done)
 		}
 	}()
 

@@ -63,9 +63,8 @@ func mine() int {
 	// Wait for interrupt signal or unexpected termination of orax cli
 	select {
 	case <-sigs:
-		return 0
-	case <-oraxCliDone: // Closed if Orax cli exits prematurely.
+	case <-oraxCliDone: // Closed if Orax cli exits by itself (kicked by server).
 	}
 
-	return 1
+	return 0
 }

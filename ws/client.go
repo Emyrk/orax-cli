@@ -38,7 +38,7 @@ func exponentialBackOff() *backoff.ExponentialBackOff {
 type Client struct {
 	id          string
 	Received    chan []byte
-	done        chan struct{}
+	DoneReading chan struct{}
 	conn        *websocket.Conn
 	NoncePrefix []byte // Not the best place to store but simple and convenient
 	sendMux     sync.Mutex
@@ -121,7 +121,7 @@ func (cli *Client) connect() {
 
 func NewWebSocketClient() (cli *Client) {
 	cli = new(Client)
-	cli.done = make(chan struct{})
+	cli.DoneReading = make(chan struct{})
 	cli.Received = make(chan []byte)
 
 	return cli
@@ -149,17 +149,22 @@ func (cli *Client) Stop() {
 			return
 		}
 
-		// the `done` channel is being closed by the read function
+		// the `doneReading` channel is being closed by the read function
 		select {
-		case <-cli.done:
-		case <-time.After(2 * time.Second):
+		case <-cli.DoneReading:
+		case <-time.After(3 * time.Second):
+			cli.clean()
 		}
 	}
 }
 
+func (cli *Client) clean() {
+	close(cli.DoneReading)
+	close(cli.Received)
+}
+
 func (cli *Client) read() {
-	defer close(cli.done)
-	defer close(cli.Received)
+	defer cli.clean()
 
 	for {
 		_, message, err := cli.conn.ReadMessage()
@@ -167,6 +172,9 @@ func (cli *Client) read() {
 
 		if err != nil {
 			if e, ok := err.(*websocket.CloseError); ok && e.Code == websocket.CloseNormalClosure {
+				if e.Text != "" {
+					log.Warnf("Disconnection reason: %s", e.Text)
+				}
 				// If it was a gracefull closure, exit the loop
 				break
 			}
