@@ -163,15 +163,15 @@ func (cli *Client) read() {
 
 	for {
 		_, message, err := cli.conn.ReadMessage()
+		cli.conn.SetReadDeadline(time.Now().Add(18 * time.Minute))
 
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure) {
-				log.WithError(err).Error("Unexpected disconnection from server")
-				cli.connect()
-			} else {
+			if e, ok := err.(*websocket.CloseError); ok && e.Code == websocket.CloseNormalClosure {
 				// If it was a gracefull closure, exit the loop
 				break
 			}
+			log.WithError(err).Error("Unexpected failure to read from server")
+			cli.connect()
 		}
 		if len(message) > 0 {
 			cli.Received <- message
