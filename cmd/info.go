@@ -123,13 +123,13 @@ func info() (err error) {
 		statsTableData[i] = []string{
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.Height))),
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.MinerCount))),
-			fmt.Sprintf("%s", getHashRate(stat.TotalOpCount, stat.Duration)),
+			fmt.Sprintf("%s", getHashRate(stat.TotalOpCount, stat.MiningDuration)),
 			fmt.Sprintf("%s", humanize.Commaf(float64(stat.UsersReward)/1e8)),
 		}
 
 		if stat.UserDetail != nil {
 			statsTableData[i] = append(statsTableData[i],
-				fmt.Sprintf("%s", getHashRate(stat.UserDetail.OpCount, stat.Duration)),
+				fmt.Sprintf("%s", getHashRate(stat.UserDetail.OpCount, stat.MiningDuration)),
 				fmt.Sprintf("%s%%", humanize.FtoaWithDigits(stat.UserDetail.Share*100, 2)),
 				fmt.Sprintf("%s", humanize.CommafWithDigits(stat.UserDetail.Reward/1e8, 8)))
 		} else {
