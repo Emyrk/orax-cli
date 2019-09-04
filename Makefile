@@ -1,16 +1,16 @@
 REVISION = $(shell git describe --tags)
 $(info    Make orax-cli $(REVISION))
 
-LDFLAGS := "-s -w -X gitlab.com/pbernier3/orax-cli/common.Version=$(REVISION)
+LDFLAGS := "-s -w -X gitlab.com/oraxpool/orax-cli/common.Version=$(REVISION)
 
 # Set prod endpoints
-LDFLAGS_PROD := $(LDFLAGS) -X gitlab.com/pbernier3/orax-cli/api.oraxAPIBaseURL=https://api.oraxpool.com
-LDFLAGS_PROD := $(LDFLAGS_PROD) -X gitlab.com/pbernier3/orax-cli/ws.orchestratorURL=wss://orchestrator.oraxpool.com/miner
+LDFLAGS_PROD := $(LDFLAGS) -X gitlab.com/oraxpool/orax-cli/api.oraxAPIBaseURL=https://api.oraxpool.com
+LDFLAGS_PROD := $(LDFLAGS_PROD) -X gitlab.com/oraxpool/orax-cli/ws.orchestratorURL=wss://orchestrator.oraxpool.com/miner
 LDFLAGS_PROD := $(LDFLAGS_PROD)"
 
 # Set test endpoints
-LDFLAGS_TEST := $(LDFLAGS) -X gitlab.com/pbernier3/orax-cli/api.oraxAPIBaseURL=https://orax-api.luciap.ca
-LDFLAGS_TEST := $(LDFLAGS_TEST) -X gitlab.com/pbernier3/orax-cli/ws.orchestratorURL=wss://orchestrator.luciap.ca/miner
+LDFLAGS_TEST := $(LDFLAGS) -X gitlab.com/oraxpool/orax-cli/api.oraxAPIBaseURL=https://orax-api.luciap.ca
+LDFLAGS_TEST := $(LDFLAGS_TEST) -X gitlab.com/oraxpool/orax-cli/ws.orchestratorURL=wss://orchestrator.luciap.ca/miner
 LDFLAGS_TEST := $(LDFLAGS_TEST)"
 
 dist: orax-cli.app orax-cli.exe orax-cli orax-cli.arm64

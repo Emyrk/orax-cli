@@ -7,7 +7,7 @@ import (
 
 	"github.com/FactomProject/factom"
 	"github.com/manifoldco/promptui"
-	"gitlab.com/pbernier3/orax-cli/api"
+	"gitlab.com/oraxpool/orax-cli/api"
 )
 
 func askEmail() (email string, err error) {

@@ -1,4 +1,4 @@
-module gitlab.com/pbernier3/orax-cli
+module gitlab.com/oraxpool/orax-cli
 
 go 1.12
 

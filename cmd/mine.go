@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/pbernier3/orax-cli/hash"
-	"gitlab.com/pbernier3/orax-cli/orax"
+	"gitlab.com/oraxpool/orax-cli/hash"
+	"gitlab.com/oraxpool/orax-cli/orax"
 )
 
 var nbMiners int

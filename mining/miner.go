@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"sync"
 
-	"gitlab.com/pbernier3/orax-cli/hash"
+	"gitlab.com/oraxpool/orax-cli/hash"
 )
 
 type Miner struct {

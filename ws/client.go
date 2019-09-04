@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/pbernier3/orax-cli/common"
+	"gitlab.com/oraxpool/orax-cli/common"
 
 	"github.com/cenkalti/backoff"
 	"github.com/gorilla/websocket"

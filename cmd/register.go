@@ -11,7 +11,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/pbernier3/orax-cli/api"
+	"gitlab.com/oraxpool/orax-cli/api"
 )
 
 var usernameFlag, passwordFlag, aliasFlag string

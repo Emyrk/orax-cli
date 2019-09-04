@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/viper"
-	"gitlab.com/pbernier3/orax-cli/common"
+	"gitlab.com/oraxpool/orax-cli/common"
 	"gopkg.in/resty.v1"
 )
 

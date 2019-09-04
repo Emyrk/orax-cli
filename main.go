@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.com/pbernier3/orax-cli/cmd"
+	"gitlab.com/oraxpool/orax-cli/cmd"
 )
 
 func main() {

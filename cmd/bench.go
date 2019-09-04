@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"time"
 
-	"gitlab.com/pbernier3/orax-cli/hash"
-	"gitlab.com/pbernier3/orax-cli/mining"
+	"gitlab.com/oraxpool/orax-cli/hash"
+	"gitlab.com/oraxpool/orax-cli/mining"
 
 	"github.com/spf13/cobra"
 )

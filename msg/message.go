@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"gitlab.com/pbernier3/orax-cli/common"
+	"gitlab.com/oraxpool/orax-cli/common"
 )
 
 var log = common.GetLog()

@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	lxr "github.com/pegnet/LXRHash"
-	"gitlab.com/pbernier3/orax-cli/common"
+	"gitlab.com/oraxpool/orax-cli/common"
 )
 
 var LX lxr.LXRHash

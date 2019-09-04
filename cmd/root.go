@@ -8,7 +8,7 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/pbernier3/orax-cli/common"
+	"gitlab.com/oraxpool/orax-cli/common"
 )
 
 var rootCmd = &cobra.Command{

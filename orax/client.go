@@ -8,11 +8,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gitlab.com/pbernier3/orax-cli/common"
-	"gitlab.com/pbernier3/orax-cli/msg"
+	"gitlab.com/oraxpool/orax-cli/common"
+	"gitlab.com/oraxpool/orax-cli/msg"
 
-	"gitlab.com/pbernier3/orax-cli/mining"
-	"gitlab.com/pbernier3/orax-cli/ws"
+	"gitlab.com/oraxpool/orax-cli/mining"
+	"gitlab.com/oraxpool/orax-cli/ws"
 )
 
 var (

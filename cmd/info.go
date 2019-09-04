@@ -10,7 +10,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/pbernier3/orax-cli/api"
+	"gitlab.com/oraxpool/orax-cli/api"
 )
 
 var infoCmd = &cobra.Command{
