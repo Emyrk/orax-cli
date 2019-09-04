@@ -61,8 +61,7 @@ type BlockStat struct {
 }
 
 type UserDetail struct {
-	OpCount  int64   `json:"opCount"`
-	Duration int64   `json:"duration"`
-	Share    float64 `json:"share"`
-	Reward   float64 `json:"reward"`
+	OpCount int64   `json:"opCount"`
+	Share   float64 `json:"share"`
+	Reward  float64 `json:"reward"`
 }
