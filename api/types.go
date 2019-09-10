@@ -51,12 +51,9 @@ type Miner struct {
 type BlockStat struct {
 	Height         int64       `json:"height"`
 	MinerCount     int         `json:"minerCount"`
-	MiningDuration int64       `json:"miningDuration"`
 	TotalOpCount   int64       `json:"totalOpCount"`
-	Ranks          []int       `json:"ranks"`
-	Reward         int64       `json:"reward"`
-	OraxReward     int64       `json:"oraxReward"`
 	UsersReward    int64       `json:"usersReward"`
+	MiningDuration int64       `json:"miningDuration"`
 	UserDetail     *UserDetail `json:"userDetail"`
 }
 
