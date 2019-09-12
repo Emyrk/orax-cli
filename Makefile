@@ -44,7 +44,7 @@ orax-cli-test:
 	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-test $(BUILD_FOLDER)/orax-cli-test
 orax-cli-test.arm64:
 	env GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS_TEST) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.arm64
-	cp $(BUILD_FOLDER)/orax-cli-test-$(REVISION).arm64 $(BUILD_FOLDER)/orax-cli-test.arm64
+	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.arm64 $(BUILD_FOLDER)/orax-cli-test.arm64
 
 .PHONY: clean
 
