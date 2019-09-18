@@ -38,6 +38,7 @@ type User struct {
 	Email            string    `json:"email"`
 	PayoutAddress    string    `json:"payoutAddress"`
 	Balance          float64   `json:"balance"`
+	TotalReward      float64   `json:"totalReward"`
 }
 
 type Miner struct {
