@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/oraxpool/orax-cli/common"
-	"gitlab.com/oraxpool/orax-cli/msg"
+	"gitlab.com/oraxpool/orax-message/msg"
 
 	"gitlab.com/oraxpool/orax-cli/mining"
 	"gitlab.com/oraxpool/orax-cli/ws"
