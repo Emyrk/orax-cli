@@ -72,9 +72,8 @@ func (cli *Client) connect() {
 	var noncePrefix []byte
 	err := backoff.RetryNotify(func() error {
 		d := websocket.Dialer{
-			Proxy:             http.ProxyFromEnvironment,
-			HandshakeTimeout:  45 * time.Second,
-			EnableCompression: true}
+			Proxy:            http.ProxyFromEnvironment,
+			HandshakeTimeout: 45 * time.Second}
 		c, resp, err := d.Dial(orchestratorURL, header)
 
 		if resp != nil {
