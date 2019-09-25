@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/rand"
 	"fmt"
+	"math"
 	"runtime"
 	"time"
 
@@ -10,12 +11,14 @@ import (
 	"gitlab.com/oraxpool/orax-cli/mining"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var benchCmd = &cobra.Command{
 	Use:   "bench",
 	Short: "Run a benchmark to evaluate the mining performance of the machine",
 	Run: func(cmd *cobra.Command, args []string) {
+		viper.ReadInConfig()
 		bench()
 	},
 }
@@ -38,9 +41,9 @@ func bench() {
 	miner := mining.NewSuperMiner(nbMiners)
 
 	// Start miners
-	miner.Mine(oprHash, []byte{19, 89}, 3)
-	ticker := time.NewTicker(duration)
-	<-ticker.C
+	miner.Mine(oprHash, []byte{19, 89}, math.MaxUint64)
+	timer := time.NewTimer(duration)
+	<-timer.C
 	miningSession := miner.Stop()
 
 	// Print results

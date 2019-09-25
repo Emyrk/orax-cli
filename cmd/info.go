@@ -95,7 +95,7 @@ func info() (err error) {
 	fmt.Printf("\nMiners:\n\n")
 
 	minersTable := tablewriter.NewWriter(os.Stdout)
-	minersTable.SetHeader([]string{"", "Alias", "Registration date", "Nominal hash rate", "Latest submission"})
+	minersTable.SetHeader([]string{"", "Alias", "Registration date", "Latest effective hash rate", "Latest block participation"})
 
 	minersTableData := make([][]string, len(userInfo.Miners))
 	for i, miner := range userInfo.Miners {
@@ -103,9 +103,17 @@ func info() (err error) {
 			fmt.Sprintf("%d", i+1),
 			miner.Alias,
 			miner.RegistrationDate.Format(time.RFC3339),
-			getHashRate(miner.LatestOpCount, miner.LatestDuration),
-			humanize.Time(miner.LatestSubmissionDate),
 		}
+
+		// New effective hash rate system
+		if miner.LatestEffectiveOpCount > 0 {
+			minersTableData[i] = append(minersTableData[i], getHashRate(miner.LatestEffectiveOpCount, miner.LatestDuration))
+		} else {
+			// Old reported hash rate
+			minersTableData[i] = append(minersTableData[i], getHashRate(miner.LatestOpCount, miner.LatestDuration))
+		}
+
+		minersTableData[i] = append(minersTableData[i], humanize.Comma(miner.LatestSubmissionHeight))
 	}
 
 	minersTable.AppendBulk(minersTableData)
@@ -116,22 +124,40 @@ func info() (err error) {
 
 	statsTable := tablewriter.NewWriter(os.Stdout)
 	statsTable.SetAlignment(tablewriter.ALIGN_RIGHT)
-	statsTable.SetHeader([]string{"Block", "Miners", "Pool hash rate", "Pool Reward", "User hash rate", "User share", "User reward"})
+	statsTable.SetHeader([]string{"Block", "Miners", "Pool scoring hash rate", "Pool Users Reward", "User scoring hash rate", "User share", "User reward"})
 
 	statsTableData := make([][]string, len(userInfo.Stats))
 	for i, stat := range userInfo.Stats {
 		statsTableData[i] = []string{
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.Height))),
 			fmt.Sprintf("%s", humanize.Comma(int64(stat.MinerCount))),
-			fmt.Sprintf("%s", getHashRate(stat.TotalOpCount, stat.MiningDuration)),
-			fmt.Sprintf("%s", humanize.Commaf(float64(stat.UsersReward)/1e8)),
 		}
 
+		// New scoring system
+		if stat.TotalScore > 0 {
+			statsTableData[i] = append(statsTableData[i], humanize.CommafWithDigits(stat.TotalScore, 0))
+		} else {
+			// DEPRECATED: Old op count system
+			statsTableData[i] = append(statsTableData[i], getHashRate(stat.TotalOpCount, stat.MiningDuration))
+		}
+
+		statsTableData[i] = append(statsTableData[i], fmt.Sprintf("%s", humanize.Commaf(float64(stat.UsersReward)/1e8)))
+
 		if stat.UserDetail != nil {
+
+			// New scoring system
+			if stat.UserDetail.Score > 0 {
+				statsTableData[i] = append(statsTableData[i],
+					fmt.Sprintf("%s", humanize.CommafWithDigits(stat.UserDetail.Score, 0)))
+			} else {
+				// DEPRECATED: Old op count system
+				statsTableData[i] = append(statsTableData[i],
+					fmt.Sprintf("%s", getHashRate(stat.UserDetail.OpCount, stat.MiningDuration)))
+			}
+
 			statsTableData[i] = append(statsTableData[i],
-				fmt.Sprintf("%s", getHashRate(stat.UserDetail.OpCount, stat.MiningDuration)),
 				fmt.Sprintf("%s%%", humanize.FtoaWithDigits(stat.UserDetail.Share*100, 2)),
-				fmt.Sprintf("%s", humanize.CommafWithDigits(stat.UserDetail.Reward/1e8, 8)))
+				fmt.Sprintf("%s", humanize.CommafWithDigits(stat.UserDetail.Reward/1e8, 3)))
 		} else {
 			statsTableData[i] = append(statsTableData[i], "0", "0%", "0")
 		}

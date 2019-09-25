@@ -32,6 +32,7 @@ require (
 	github.com/cmars/basen v0.0.0-20150613233007-fe3947df716e // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.7.0
+	github.com/google/flatbuffers v1.11.0
 	github.com/gorilla/websocket v1.4.1
 	github.com/hashicorp/go-plugin v1.0.1 // indirect
 	github.com/howeyc/fsnotify v0.9.0 // indirect
@@ -45,6 +46,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
+	github.com/stretchr/testify v1.4.0
 	gitlab.com/oraxpool/orax-message v0.0.0-20190921191632-bfac1083c89e
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c // indirect

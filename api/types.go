@@ -42,17 +42,19 @@ type User struct {
 }
 
 type Miner struct {
-	RegistrationDate     time.Time `json:"registrationDate"`
-	Alias                string    `json:"alias"`
-	LatestSubmissionDate time.Time `json:"latestSubmissionDate"`
-	LatestOpCount        int64     `json:"latestOpCount"`
-	LatestDuration       int64     `json:"latestDuration"`
+	RegistrationDate       time.Time `json:"registrationDate"`
+	Alias                  string    `json:"alias"`
+	LatestOpCount          int64     `json:"latestOpCount"`
+	LatestEffectiveOpCount int64     `json:"latestEffectiveOpCount"`
+	LatestDuration         int64     `json:"latestDuration"`
+	LatestSubmissionHeight int64     `json:"latestSubmissionHeight"`
 }
 
 type BlockStat struct {
 	Height         int64       `json:"height"`
 	MinerCount     int         `json:"minerCount"`
 	TotalOpCount   int64       `json:"totalOpCount"`
+	TotalScore     float64     `json:"totalScore"`
 	UsersReward    int64       `json:"usersReward"`
 	MiningDuration int64       `json:"miningDuration"`
 	UserDetail     *UserDetail `json:"userDetail"`
@@ -62,4 +64,5 @@ type UserDetail struct {
 	OpCount int64   `json:"opCount"`
 	Share   float64 `json:"share"`
 	Reward  float64 `json:"reward"`
+	Score   float64 `json:"score"`
 }

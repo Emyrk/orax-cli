@@ -1,4 +1,4 @@
-package mining
+package miningv0
 
 import (
 	"encoding/binary"
@@ -11,21 +11,29 @@ type Miner struct {
 	id         int
 	stop       chan int
 	opsCounter int64
+	bestNonces []*Nonce
 }
 
 func NewMiner(id int) *Miner {
 	miner := new(Miner)
 	miner.id = id
 	miner.stop = make(chan int)
+	miner.bestNonces = make([]*Nonce, 0, 256)
 
 	return miner
 }
 
 func (miner *Miner) Reset() {
 	miner.opsCounter = 0
+	miner.bestNonces = make([]*Nonce, 0, 256)
 }
 
-func (miner *Miner) mine(oprHash []byte, noncePrefix []byte, target uint64, wg *sync.WaitGroup, c chan<- []byte) {
+type Nonce struct {
+	Nonce      []byte
+	Difficulty uint64
+}
+
+func (miner *Miner) mine(oprHash []byte, noncePrefix []byte, maxNonces int, wg *sync.WaitGroup) {
 	// Create a slice of sufficient capacity to avoid a new underlying array to be allocated
 	// when appending nonce after the OPR
 	dataToMine := make([]byte, 32, 64)
@@ -70,8 +78,15 @@ mining:
 		diff := computeDifficulty(h)
 		miner.opsCounter++
 
-		if diff >= target {
-			c <- copyNonce(nonce)
+		if len(miner.bestNonces) < maxNonces {
+			// If the buffer is not yet full just append
+			miner.bestNonces = append(miner.bestNonces, &Nonce{copyNonce(nonce), diff})
+			SortNoncesByDiff(miner.bestNonces)
+		} else if miner.bestNonces[len(miner.bestNonces)-1].Difficulty < diff {
+			// Otherwise if diff is better than the last best nonce
+			miner.bestNonces = miner.bestNonces[:maxNonces-1]
+			miner.bestNonces = append(miner.bestNonces, &Nonce{copyNonce(nonce), diff})
+			SortNoncesByDiff(miner.bestNonces)
 		}
 	}
 

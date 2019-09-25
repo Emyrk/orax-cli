@@ -13,7 +13,7 @@ Get the binary for your platform:
 - [Linux](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli)
 - [MacOS](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.app)
 - [Windows](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.exe)
-- [Raspberry Pi 4 (ARM64)](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.arm64)
+- [ARM64 (Raspberry Pi 4)](https://oraxpool.s3.ca-central-1.amazonaws.com/orax-cli/orax-cli.arm64)
 
 ## Sign up
 
@@ -21,6 +21,12 @@ Start by creating a new account. You only need an email address and a Factoid ad
 
 ```bash
 ./orax-cli register
+```
+
+The `register` command can also be used in non-interactive mode when registering with an already existing account, useful for automating deployment of miners (Ansible...). You just need to provide username (email), password and miner alias to the command:
+
+```bash
+./orax-cli register -u my_orax_accoung@gmail.com -p my_password -a _my_new_miner
 ```
 
 ## Start mining

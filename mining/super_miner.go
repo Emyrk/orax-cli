@@ -1,7 +1,8 @@
 package mining
 
 import (
-	"sort"
+	"encoding/binary"
+	"fmt"
 	"sync"
 	"time"
 
@@ -11,10 +12,11 @@ import (
 )
 
 var log = common.GetLog()
+var nonceBufferMux sync.Mutex
 
 type SuperMiner struct {
-	running   bool
-	maxNonces int
+	SubMinerCount int
+	running       bool
 
 	miners        []*Miner
 	wg            *sync.WaitGroup
@@ -22,18 +24,23 @@ type SuperMiner struct {
 }
 
 type MiningSession struct {
-	NoncePrefix       []byte
-	OprHash           []byte
-	StartTime         time.Time
-	EndTime           time.Time
-	Duration          time.Duration
-	TotalOps          int64
-	OrderedBestNonces []*Nonce
+	NoncePrefix []byte
+	OprHash     []byte
+	StartTime   time.Time
+	EndTime     time.Time
+	Duration    time.Duration
+	TotalOps    int64
+	TotalShares int64
+	NonceBuffer [][]byte
+	sharesC     chan []byte
+	Target      uint64
 }
 
 func NewSuperMiner(nbMiners int) *SuperMiner {
 	superMiner := new(SuperMiner)
+	superMiner.SubMinerCount = nbMiners
 	miners := make([]*Miner, nbMiners, nbMiners)
+
 	superMiner.miners = miners
 
 	for i := 0; i < nbMiners; i++ {
@@ -43,37 +50,58 @@ func NewSuperMiner(nbMiners int) *SuperMiner {
 	return superMiner
 }
 
-func (sm *SuperMiner) Mine(oprHash []byte, noncePrefix []byte, maxNonces int) {
+func (sm *SuperMiner) Mine(oprHash []byte, noncePrefix []byte, target uint64) {
 	if sm.running {
 		log.Fatal("Tried to run an already running miner")
 	}
-	if maxNonces <= 0 {
-		log.WithField("maxNonces", maxNonces).Error("Invalid maxNonces")
-		return
-	}
-
-	log.WithFields(logrus.Fields{
-		"nbSubMiners": len(sm.miners),
-		"oprHash":     oprHash,
-		"noncePrefix": noncePrefix,
-		"maxNonces":   maxNonces,
-	}).Infof("Starting mining")
 
 	sm.running = true
-	sm.maxNonces = maxNonces
 
 	sm.miningSession = new(MiningSession)
+
+	sm.miningSession.Target = target
 	sm.miningSession.NoncePrefix = noncePrefix
 	sm.miningSession.StartTime = time.Now()
 	sm.miningSession.OprHash = oprHash
+	sm.miningSession.NonceBuffer = make([][]byte, 0, 300)
+
+	sm.miningSession.sharesC = make(chan []byte, 64)
+	go sm.collectShares(sm.miningSession.sharesC)
 
 	wg := new(sync.WaitGroup)
 	for i := 0; i < len(sm.miners); i++ {
 		sm.miners[i].Reset()
 		wg.Add(1)
-		go sm.miners[i].mine(oprHash, noncePrefix, maxNonces, wg)
+		go sm.miners[i].mine(oprHash, noncePrefix, target, wg, sm.miningSession.sharesC)
 	}
 	sm.wg = wg
+
+	targetBuff := make([]byte, 8)
+	binary.BigEndian.PutUint64(targetBuff, target)
+
+	log.WithFields(logrus.Fields{
+		"nbSubMiners": len(sm.miners),
+		"oprHash":     oprHash,
+		"noncePrefix": noncePrefix,
+		"target":      fmt.Sprintf("%x", targetBuff),
+	}).Infof("Starting mining")
+}
+
+func (sm *SuperMiner) collectShares(c <-chan []byte) {
+	for nonce := range c {
+		sm.miningSession.TotalShares++
+		nonceBufferMux.Lock()
+		sm.miningSession.NonceBuffer = append(sm.miningSession.NonceBuffer, nonce)
+		nonceBufferMux.Unlock()
+	}
+}
+
+func (sm *SuperMiner) ReadNonceBuffer() [][]byte {
+	nonceBufferMux.Lock()
+	buffer := sm.miningSession.NonceBuffer
+	sm.miningSession.NonceBuffer = make([][]byte, 0, 300)
+	nonceBufferMux.Unlock()
+	return buffer
 }
 
 func (sm *SuperMiner) Stop() MiningSession {
@@ -87,39 +115,17 @@ func (sm *SuperMiner) Stop() MiningSession {
 	}
 
 	sm.wg.Wait()
+
 	sm.running = false
 	sm.miningSession.EndTime = time.Now()
 	sm.miningSession.Duration = sm.miningSession.EndTime.Sub(sm.miningSession.StartTime)
+	close(sm.miningSession.sharesC)
 
-	totalOps, orderedBestNonces := sm.computeMiningSessionResult()
-	sm.miningSession.TotalOps = totalOps
-
-	if sm.maxNonces < len(orderedBestNonces) {
-		sm.miningSession.OrderedBestNonces = orderedBestNonces[:sm.maxNonces]
-	} else {
-		sm.miningSession.OrderedBestNonces = orderedBestNonces
+	for i := 0; i < len(sm.miners); i++ {
+		sm.miningSession.TotalOps += sm.miners[i].opsCounter
 	}
 
 	return *sm.miningSession
-}
-
-func (sm *SuperMiner) computeMiningSessionResult() (int64, []*Nonce) {
-
-	totalOps := int64(0)
-	var bestNonces []*Nonce
-	for i := 0; i < len(sm.miners); i++ {
-		totalOps += sm.miners[i].opsCounter
-		bestNonces = append(bestNonces, sm.miners[i].bestNonces...)
-	}
-	SortNoncesByDiff(bestNonces)
-
-	return totalOps, bestNonces
-}
-
-func SortNoncesByDiff(nonces []*Nonce) {
-	sort.Slice(nonces, func(i, j int) bool {
-		return nonces[i].Difficulty > nonces[j].Difficulty
-	})
 }
 
 func (sm *SuperMiner) IsRunning() bool {

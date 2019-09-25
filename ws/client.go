@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -39,9 +40,17 @@ type Client struct {
 	id          string
 	Received    chan []byte
 	DoneReading chan struct{}
+	Connected   chan *ConnectionInfo
 	conn        *websocket.Conn
-	NoncePrefix []byte // Not the best place to store but simple and convenient
 	sendMux     sync.Mutex
+	NbSubMiners int
+}
+
+type ConnectionInfo struct {
+	NoncePrefix       []byte
+	Target            uint64
+	BatchingDuration  time.Duration
+	InitialBatchDelay time.Duration
 }
 
 var orchestratorURL string
@@ -60,6 +69,16 @@ func init() {
 	}
 }
 
+func NewWebSocketClient(nbSubMiners int) (cli *Client) {
+	cli = new(Client)
+	cli.NbSubMiners = nbSubMiners
+	cli.DoneReading = make(chan struct{})
+	cli.Received = make(chan []byte)
+	cli.Connected = make(chan *ConnectionInfo)
+
+	return cli
+}
+
 func (cli *Client) connect() {
 	id := viper.GetString("miner_id")
 	minerSecret := viper.GetString("miner_secret")
@@ -67,9 +86,11 @@ func (cli *Client) connect() {
 
 	header := http.Header{
 		"Authorization": []string{id + ":" + minerSecret},
-		"Version":       []string{common.Version[1:]}}
+		"Version":       []string{common.Version[1:]},
+		"HashRate":      []string{strconv.FormatInt(common.GetIndicativeHashRate(cli.NbSubMiners), 10)},
+	}
 
-	var noncePrefix []byte
+	var connectionInfo *ConnectionInfo
 	err := backoff.RetryNotify(func() error {
 		d := websocket.Dialer{
 			Proxy:            http.ProxyFromEnvironment,
@@ -97,15 +118,16 @@ func (cli *Client) connect() {
 				return errors.New(msg)
 			}
 
-			// Decode assigned nonce prefix
-			noncePrefix, err = hex.DecodeString(resp.Header.Get("NoncePrefix"))
+			// Decode headers
+			connectionInfo, err = parseConnectionHeaders(resp.Header)
 			if err != nil {
-				return backoff.Permanent(fmt.Errorf("Failed to get nonce prefix: %s", err))
+				return err
 			}
+
 		}
 
 		cli.conn = c
-		cli.NoncePrefix = noncePrefix
+
 		return err
 	}, exponentialBackOff(), func(err error, duration time.Duration) {
 		log.Warnf("Failed to connect. Retrying in %s", duration)
@@ -115,15 +137,54 @@ func (cli *Client) connect() {
 		log.Fatalf("Failed to connect: %s", err)
 	}
 
-	log.Info("Connected to Orax orchestrator")
+	cli.Connected <- connectionInfo
 }
 
-func NewWebSocketClient() (cli *Client) {
-	cli = new(Client)
-	cli.DoneReading = make(chan struct{})
-	cli.Received = make(chan []byte)
+func parseConnectionHeaders(header http.Header) (*ConnectionInfo, error) {
+	connectionInfo := new(ConnectionInfo)
 
-	return cli
+	// NoncePrefix
+	noncePrefix, err := hex.DecodeString(header.Get("NoncePrefix"))
+	if err != nil {
+		return nil, backoff.Permanent(fmt.Errorf("Failed to get nonce prefix: %s", err))
+	}
+	connectionInfo.NoncePrefix = noncePrefix
+
+	// Target
+	targetStr := header.Get("Target")
+	if targetStr != "" {
+		target, err := strconv.ParseUint(targetStr, 10, 64)
+		if err != nil {
+			return nil, backoff.Permanent(fmt.Errorf("Failed to get target: %s", err))
+		}
+		connectionInfo.Target = target
+	}
+
+	// BatchingDuration
+	bacthingDurationStr := header.Get("BatchingDuration")
+	if bacthingDurationStr != "" {
+		bacthingDuration, err := strconv.Atoi(bacthingDurationStr)
+		if err != nil {
+			log.WithField("value", bacthingDurationStr).Warn("Failed to parse BatchingDuration value from the server")
+			connectionInfo.BatchingDuration = 60
+		} else {
+			connectionInfo.BatchingDuration = time.Duration(bacthingDuration) * time.Second
+		}
+	}
+
+	// InitialBatchDelay
+	initialBatchDelayStr := header.Get("InitialBatchDelay")
+	if initialBatchDelayStr != "" {
+		initialBatchDelay, err := strconv.Atoi(initialBatchDelayStr)
+		if err != nil {
+			log.WithField("value", initialBatchDelayStr).Warn("Failed to parse InitialBatchDelay value from the server")
+			connectionInfo.InitialBatchDelay = 60
+		} else {
+			connectionInfo.InitialBatchDelay = time.Duration(initialBatchDelay) * time.Second
+		}
+	}
+
+	return connectionInfo, nil
 }
 
 func (cli *Client) Start() {
@@ -160,6 +221,7 @@ func (cli *Client) Stop() {
 func (cli *Client) clean() {
 	close(cli.DoneReading)
 	close(cli.Received)
+	close(cli.Connected)
 }
 
 func (cli *Client) read() {
@@ -167,6 +229,7 @@ func (cli *Client) read() {
 
 	for {
 		_, message, err := cli.conn.ReadMessage()
+		// TODO: this deadline should be readjusted after V1
 		cli.conn.SetReadDeadline(time.Now().Add(18 * time.Minute))
 
 		if err != nil {
@@ -186,7 +249,7 @@ func (cli *Client) read() {
 	}
 }
 
-func (cli *Client) Connected() bool {
+func (cli *Client) IsConnected() bool {
 	return cli.conn != nil
 }
 
