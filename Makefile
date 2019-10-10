@@ -8,13 +8,13 @@ LDFLAGS_PROD := $(LDFLAGS) -X gitlab.com/oraxpool/orax-cli/api.oraxAPIBaseURL=ht
 LDFLAGS_PROD := $(LDFLAGS_PROD) -X gitlab.com/oraxpool/orax-cli/ws.orchestratorURL=wss://orchestrator.oraxpool.com/miner
 LDFLAGS_PROD := $(LDFLAGS_PROD)"
 
-# Set test endpoints
-LDFLAGS_TEST := $(LDFLAGS) -X gitlab.com/oraxpool/orax-cli/api.oraxAPIBaseURL=https://orax-api.luciap.ca
-LDFLAGS_TEST := $(LDFLAGS_TEST) -X gitlab.com/oraxpool/orax-cli/ws.orchestratorURL=wss://orchestrator.luciap.ca/miner
-LDFLAGS_TEST := $(LDFLAGS_TEST)"
+# Set staging endpoints
+LDFLAGS_STAGING := $(LDFLAGS) -X gitlab.com/oraxpool/orax-cli/api.oraxAPIBaseURL=https://api.staging.oraxpool.com
+LDFLAGS_STAGING := $(LDFLAGS_STAGING) -X gitlab.com/oraxpool/orax-cli/ws.orchestratorURL=wss://orchestrator.staging.oraxpool.com/miner
+LDFLAGS_STAGING := $(LDFLAGS_STAGING)"
 
-dist: orax-cli.app orax-cli.exe orax-cli orax-cli.arm64
-dist-test: orax-cli-test.app orax-cli-test.exe orax-cli-test orax-cli-test.arm64
+prod: orax-cli.app orax-cli.exe orax-cli orax-cli.arm64
+staging: orax-cli-staging.app orax-cli-staging.exe orax-cli-staging orax-cli-staging.arm64
 
 BUILD_FOLDER="build"
 
@@ -32,19 +32,19 @@ orax-cli.arm64:
 	env GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS_PROD) -o $(BUILD_FOLDER)/orax-cli-$(REVISION).arm64
 	cp $(BUILD_FOLDER)/orax-cli-$(REVISION).arm64 $(BUILD_FOLDER)/orax-cli.arm64
 
-# Test targets
-orax-cli-test.app:
-	env GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS_TEST) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.app
-	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.app $(BUILD_FOLDER)/orax-cli-test.app
-orax-cli-test.exe:
-	env GOOS=windows GOARCH=amd64 go build -ldflags $(LDFLAGS_TEST) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.exe
-	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.exe $(BUILD_FOLDER)/orax-cli-test.exe
-orax-cli-test:
-	env GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS_TEST) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-test
-	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-test $(BUILD_FOLDER)/orax-cli-test
-orax-cli-test.arm64:
-	env GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS_TEST) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.arm64
-	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-test.arm64 $(BUILD_FOLDER)/orax-cli-test.arm64
+# Staging targets
+orax-cli-staging.app:
+	env GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS_STAGING) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-staging.app
+	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-staging.app $(BUILD_FOLDER)/orax-cli-staging.app
+orax-cli-staging.exe:
+	env GOOS=windows GOARCH=amd64 go build -ldflags $(LDFLAGS_STAGING) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-staging.exe
+	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-staging.exe $(BUILD_FOLDER)/orax-cli-staging.exe
+orax-cli-staging:
+	env GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS_STAGING) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-staging
+	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-staging $(BUILD_FOLDER)/orax-cli-staging
+orax-cli-staging.arm64:
+	env GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS_STAGING) -o $(BUILD_FOLDER)/orax-cli-$(REVISION)-staging.arm64
+	cp $(BUILD_FOLDER)/orax-cli-$(REVISION)-staging.arm64 $(BUILD_FOLDER)/orax-cli-staging.arm64
 
 .PHONY: clean
 
