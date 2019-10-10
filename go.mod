@@ -41,7 +41,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/pegnet/LXRHash v0.0.0-20190827131157-8ee2b6d50bde
+	github.com/pegnet/LXRHash v0.0.0-20191010212656-6349ae0198e5
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
