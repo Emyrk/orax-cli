@@ -23,6 +23,8 @@ var (
 	log = common.GetLog()
 )
 
+const redirectDurationLimit = 5 * time.Minute
+
 func exponentialBackOff() *backoff.ExponentialBackOff {
 	b := &backoff.ExponentialBackOff{
 		InitialInterval:     500 * time.Millisecond,
@@ -44,6 +46,7 @@ type Client struct {
 	conn        *websocket.Conn
 	sendMux     sync.Mutex
 	NbSubMiners int
+	Endpoint    string
 }
 
 type ConnectionInfo struct {
@@ -75,6 +78,7 @@ func NewWebSocketClient(nbSubMiners int) (cli *Client) {
 	cli.DoneReading = make(chan struct{})
 	cli.Received = make(chan []byte)
 	cli.Connected = make(chan *ConnectionInfo)
+	cli.Endpoint = orchestratorURL
 
 	return cli
 }
@@ -91,50 +95,87 @@ func (cli *Client) connect() {
 	}
 
 	var connectionInfo *ConnectionInfo
+	retryStrategy := exponentialBackOff()
 	err := backoff.RetryNotify(func() error {
+		// If a redirection didn't allow the client to connect after a certain amount of time
+		// reset the endpoint to the default
+		// This prevents the client to be stuck for ever because of a faulty redirection
+		if cli.Endpoint != orchestratorURL && retryStrategy.GetElapsedTime() > redirectDurationLimit {
+			cli.Endpoint = orchestratorURL
+			retryStrategy.Reset()
+			log.Warnf("Resetting endpoint to the default [%s]", cli.Endpoint)
+		}
+
 		d := websocket.Dialer{
 			Proxy:            http.ProxyFromEnvironment,
 			HandshakeTimeout: 45 * time.Second}
-		c, resp, err := d.Dial(orchestratorURL, header)
+		c, resp, err := d.Dial(cli.Endpoint, header)
 
-		if resp != nil {
-			if resp.StatusCode == 400 {
-				bytes, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					return backoff.Permanent(fmt.Errorf("Unexpected error: %s", err))
-				}
-				msg := string(bytes)
-				return backoff.Permanent(errors.New(msg))
-			} else if resp.StatusCode == 401 {
-				return backoff.Permanent(errors.New("Failed to authenticate with orax orchestrator"))
-			} else if resp.StatusCode == 409 {
-				return backoff.Permanent(errors.New("Already connected with the same miner id"))
-			} else if resp.StatusCode >= 400 {
-				bytes, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					return fmt.Errorf("Unexpected error: %s", err)
-				}
-				msg := string(bytes)
-				return errors.New(msg)
-			}
+		if err != nil {
+			// Server responded but handshake failed
+			if err == websocket.ErrBadHandshake {
 
-			// Decode headers
-			connectionInfo, err = parseConnectionHeaders(resp.Header)
-			if err != nil {
+				if resp == nil {
+					return errors.New("Empty response")
+				}
+
+				// 3xx: Redirection
+				if 300 <= resp.StatusCode && resp.StatusCode < 400 {
+					if resp.Header.Get("Location") == "" {
+						return errors.New("Location missing for redirection")
+					}
+
+					cli.Endpoint = resp.Header.Get("Location")
+					retryStrategy.Reset()
+					return fmt.Errorf("Redirecting to %s", cli.Endpoint)
+				} else
+				// 4xx: Rejected by the server (validation)
+				if resp.StatusCode == 400 {
+					bytes, err := ioutil.ReadAll(resp.Body)
+					if err != nil {
+						return backoff.Permanent(fmt.Errorf("Unexpected error: %s", err))
+					}
+					msg := string(bytes)
+					return backoff.Permanent(errors.New(msg))
+				} else if resp.StatusCode == 401 {
+					return backoff.Permanent(errors.New("Failed to authenticate with orax orchestrator"))
+				} else if resp.StatusCode == 409 {
+					return backoff.Permanent(errors.New("Already connected with the same miner id"))
+				} else
+				// Unhandled errors
+				if resp.StatusCode >= 400 {
+					bytes, err := ioutil.ReadAll(resp.Body)
+					if err != nil {
+						return fmt.Errorf("Unexpected error: %s", err)
+					}
+					msg := string(bytes)
+					return errors.New(msg)
+				}
+			} else {
+				// Failed to connect
 				return err
 			}
+		}
 
+		if resp == nil {
+			return errors.New("Empty response")
+		}
+
+		// Decode headers
+		connectionInfo, err = parseConnectionHeaders(resp.Header)
+		if err != nil {
+			return err
 		}
 
 		cli.conn = c
 
-		return err
-	}, exponentialBackOff(), func(err error, duration time.Duration) {
-		log.Warnf("Failed to connect. Retrying in %s", duration)
+		return nil
+	}, retryStrategy, func(err error, duration time.Duration) {
+		log.WithError(err).Warnf("Failed to connect. Retrying in %s", duration)
 	})
 
 	if err != nil {
-		log.Fatalf("Failed to connect: %s", err)
+		log.WithError(err).Fatal("Failed to connect")
 	}
 
 	cli.Connected <- connectionInfo
@@ -146,7 +187,7 @@ func parseConnectionHeaders(header http.Header) (*ConnectionInfo, error) {
 	// NoncePrefix
 	noncePrefix, err := hex.DecodeString(header.Get("NoncePrefix"))
 	if err != nil {
-		return nil, backoff.Permanent(fmt.Errorf("Failed to get nonce prefix: %s", err))
+		return nil, fmt.Errorf("Failed to get nonce prefix: %s", err)
 	}
 	connectionInfo.NoncePrefix = noncePrefix
 
@@ -155,7 +196,7 @@ func parseConnectionHeaders(header http.Header) (*ConnectionInfo, error) {
 	if targetStr != "" {
 		target, err := strconv.ParseUint(targetStr, 10, 64)
 		if err != nil {
-			return nil, backoff.Permanent(fmt.Errorf("Failed to get target: %s", err))
+			return nil, fmt.Errorf("Failed to get target: %s", err)
 		}
 		connectionInfo.Target = target
 	}
