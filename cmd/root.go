@@ -18,12 +18,14 @@ var rootCmd = &cobra.Command{
 
 var (
 	configFilePath string
+	logColor       string
 )
 
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.Version = common.Version
 	rootCmd.PersistentFlags().StringVarP(&configFilePath, "config", "c", "", "Config file path (default $HOME/.orax/config.yml)")
+	rootCmd.PersistentFlags().StringVar(&logColor, "color", "auto", "Log color: [auto|on|off]")
 }
 
 func Execute() {
@@ -55,4 +57,6 @@ func initConfig() {
 		viper.SetConfigName("config")
 		viper.AddConfigPath(configFolderPath)
 	}
+
+	common.SetLogColor(logColor)
 }
