@@ -7,11 +7,11 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.com/oraxpool/orax-cli/api"
+	"gitlab.com/oraxpool/orax-cli/common"
 )
 
 var usernameFlag, passwordFlag, aliasFlag string
@@ -30,20 +30,19 @@ var registerCmd = &cobra.Command{
 		err := viper.ReadInConfig()
 
 		if err == nil && viper.IsSet("miner_id") {
-			color.Red("A miner identity is already configured in [%s]. Aborting registration.", configFilePath)
+			common.PrintError("A miner identity is already configured in [%s]. Aborting registration.\n", configFilePath)
 		} else {
 			// Write a blank config file early to verify it's possible
 			// (permission, file extension...)
 			err = viper.WriteConfig()
 			if err != nil {
-				color.Red(err.Error())
+				common.PrintError("%s\n", err.Error())
 				os.Exit(1)
 			}
 
 			err := register()
 			if err != nil {
-				fmt.Printf("\n")
-				color.Red(err.Error())
+				common.PrintError("\n%s\n", err.Error())
 				os.Exit(1)
 			}
 		}
@@ -64,7 +63,7 @@ func registerNonInteractive() error {
 	if err != nil {
 		return fmt.Errorf("Failed to authenticate: %s", err)
 	}
-	color.Green("\nSuccessfully authenticated.")
+	common.PrintSuccess("\nSuccessfully authenticated.")
 
 	viper.Set("user_id", result.ID)
 	viper.Set("jwt", result.JWT)
@@ -97,7 +96,7 @@ func saveConfiguration() error {
 		return err
 	}
 
-	color.Green("\nRegistration completed. Config stored in [%s]\n\n", configFilePath)
+	common.PrintSuccess("\nRegistration completed. Config stored in [%s]\n\n", configFilePath)
 
 	return nil
 }
@@ -158,14 +157,14 @@ func getOraxUser() (err error) {
 		if err != nil {
 			return err
 		}
-		color.Green("\nNew Orax user registered successfully.\n\n")
+		common.PrintSuccess("\nNew Orax user registered successfully.\n\n")
 	} else {
 		userID, jwt, err = existingOraxUser()
 
 		if err != nil {
 			return err
 		}
-		color.Green("\nSuccessfully authenticated.\n\n")
+		common.PrintSuccess("\nSuccessfully authenticated.\n\n")
 	}
 
 	viper.Set("user_id", userID)

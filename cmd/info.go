@@ -6,11 +6,11 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
-	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.com/oraxpool/orax-cli/api"
+	"gitlab.com/oraxpool/orax-cli/common"
 )
 
 var infoCmd = &cobra.Command{
@@ -20,8 +20,7 @@ var infoCmd = &cobra.Command{
 		viper.ReadInConfig()
 		err := info()
 		if err != nil {
-			fmt.Printf("\n")
-			color.Red(err.Error())
+			common.PrintError("%s\n", err.Error())
 			os.Exit(1)
 		}
 	},

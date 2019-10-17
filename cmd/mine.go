@@ -7,10 +7,10 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/fatih/color"
 	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/oraxpool/orax-cli/common"
 	"gitlab.com/oraxpool/orax-cli/hash"
 	"gitlab.com/oraxpool/orax-cli/orax"
 )
@@ -29,7 +29,7 @@ var mineCmd = &cobra.Command{
 		err := viper.ReadInConfig()
 
 		if err != nil {
-			color.Red("Failed to read config: %s", err)
+			common.PrintError("Failed to read config: %s\n", err)
 		} else if viper.GetString("miner_id") == "" {
 			fmt.Printf("\nTo start mining, first register your miner with the command `orax-cli register`\n\n")
 		} else {
@@ -56,7 +56,7 @@ func mine() int {
 		close(stopOraxCli) // Stop orax cli.
 		fmt.Println("\n\nWaiting for Orax cli to stop...")
 		<-oraxCliDone // Wait for orax cli to stop.
-		color.Green("\nOrax cli stopped.\n\n")
+		fmt.Printf("Orax cli stopped.\n\n")
 	}()
 
 	defer signal.Reset()

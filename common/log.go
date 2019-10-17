@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"os"
 	"sync"
 
@@ -10,8 +9,10 @@ import (
 )
 
 var (
-	instance *logrus.Logger
-	once     sync.Once
+	instance  *logrus.Logger
+	once      sync.Once
+	successCr = color.New(color.FgGreen)
+	errorC    = color.New(color.FgRed)
 )
 
 func GetLog() *logrus.Logger {
@@ -40,7 +41,15 @@ func SetLogColor(c string) {
 		color.NoColor = true
 		break
 	default:
-		fmt.Fprintf(os.Stderr, "Invalid value for --color: [%s] \n", c)
+		PrintError("Invalid value for --color: [%s] \n", c)
 		os.Exit(1)
 	}
+}
+
+func PrintSuccess(format string, a ...interface{}) {
+	successCr.Fprintf(os.Stdout, format, a...)
+}
+
+func PrintError(format string, a ...interface{}) {
+	errorC.Fprintf(os.Stderr, format, a...)
 }

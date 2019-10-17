@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -30,7 +29,7 @@ func init() {
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		common.PrintError(err.Error())
 		os.Exit(1)
 	}
 }
