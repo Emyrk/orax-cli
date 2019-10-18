@@ -54,7 +54,7 @@ func mine() int {
 
 	defer func() {
 		close(stopOraxCli) // Stop orax cli.
-		fmt.Println("\n\nWaiting for Orax cli to stop...")
+		fmt.Println("\nWaiting for Orax cli to stop...")
 		<-oraxCliDone // Wait for orax cli to stop.
 		fmt.Printf("Orax cli stopped.\n\n")
 	}()

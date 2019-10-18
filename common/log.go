@@ -21,6 +21,7 @@ func GetLog() *logrus.Logger {
 		instance = logrus.New()
 		formatter := &logrus.TextFormatter{FullTimestamp: true}
 		instance.Formatter = formatter
+		instance.AddHook(NewStdDemuxerHook(instance))
 	})
 
 	return instance
