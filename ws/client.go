@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	"gitlab.com/oraxpool/orax-cli/common"
@@ -23,7 +23,10 @@ var (
 	log = common.GetLog()
 )
 
-const redirectDurationLimit = 5 * time.Minute
+const (
+	redirectDurationLimit = 5 * time.Minute
+	pingInterval          = 30 * time.Second
+)
 
 func exponentialBackOff() *backoff.ExponentialBackOff {
 	b := &backoff.ExponentialBackOff{
@@ -40,13 +43,14 @@ func exponentialBackOff() *backoff.ExponentialBackOff {
 
 type Client struct {
 	id          string
-	Received    chan []byte
-	DoneReading chan struct{}
-	Connected   chan *ConnectionInfo
-	conn        *websocket.Conn
-	sendMux     sync.Mutex
 	NbSubMiners int
 	Endpoint    string
+
+	Send    chan []byte
+	Receive chan []byte
+
+	Connected    chan *ConnectionInfo
+	Disconnected chan bool
 }
 
 type ConnectionInfo struct {
@@ -74,16 +78,78 @@ func init() {
 
 func NewWebSocketClient(nbSubMiners int) (cli *Client) {
 	cli = new(Client)
-	cli.NbSubMiners = nbSubMiners
-	cli.DoneReading = make(chan struct{})
-	cli.Received = make(chan []byte)
-	cli.Connected = make(chan *ConnectionInfo)
 	cli.Endpoint = orchestratorURL
+	cli.NbSubMiners = nbSubMiners
+
+	cli.Connected = make(chan *ConnectionInfo)
+	cli.Disconnected = make(chan bool)
+	cli.Receive = make(chan []byte)
+	cli.Send = make(chan []byte)
 
 	return cli
 }
 
-func (cli *Client) connect() {
+func (cli *Client) Start(stop <-chan struct{}) <-chan struct{} {
+	done := make(chan struct{})
+
+	go func() {
+		defer func() {
+			close(cli.Receive)
+			close(cli.Send)
+			close(cli.Connected)
+			close(cli.Disconnected)
+			close(done)
+		}()
+
+		conn := cli.connect(stop)
+		doneReading := cli.readPump(conn)
+		stopWrite := make(chan struct{})
+		cli.writePump(conn, stopWrite)
+
+		for {
+			select {
+			case err := <-doneReading:
+				cli.Disconnected <- true
+				close(stopWrite)
+				conn.Close()
+
+				if err != nil {
+					conn = cli.connect(stop)
+					doneReading = cli.readPump(conn)
+					stopWrite = make(chan struct{})
+					cli.writePump(conn, stopWrite)
+				} else {
+					// Graceful shutdown initiated by the server
+					return
+				}
+			case <-stop:
+				// Initiate graceful shutdown
+				err := conn.WriteControl(
+					websocket.CloseMessage,
+					websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+					time.Now().Add(2*time.Second),
+				)
+				close(stopWrite)
+				if err != nil {
+					log.WithError(err).Error("Failed to gracefully disconnect")
+					return
+				}
+
+				// Wait for the closing response from the server
+				// to shutdown or timeout
+				select {
+				case <-doneReading:
+				case <-time.After(2 * time.Second):
+				}
+				return
+			}
+		}
+	}()
+
+	return done
+}
+
+func (cli *Client) connect(stop <-chan struct{}) (conn *websocket.Conn) {
 	id := viper.GetString("miner_id")
 	minerSecret := viper.GetString("miner_secret")
 	log.Infof("Connecting to Orax as [%s]...", id)
@@ -95,14 +161,27 @@ func (cli *Client) connect() {
 	}
 
 	var connectionInfo *ConnectionInfo
+	ctx, cancel := context.WithCancel(context.Background())
 	retryStrategy := exponentialBackOff()
+	retryWithContext := backoff.WithContext(retryStrategy, ctx)
+
+	// This goroutine cancels the retries if the stop channel returns anything
+	backoffOver := make(chan struct{})
+	go func() {
+		select {
+		case <-stop:
+			cancel()
+		case <-backoffOver:
+		}
+	}()
+
 	err := backoff.RetryNotify(func() error {
 		// If a redirection didn't allow the client to connect after a certain amount of time
 		// reset the endpoint to the default
 		// This prevents the client to be stuck for ever because of a faulty redirection
 		if cli.Endpoint != orchestratorURL && retryStrategy.GetElapsedTime() > redirectDurationLimit {
 			cli.Endpoint = orchestratorURL
-			retryStrategy.Reset()
+			retryWithContext.Reset()
 			log.Warnf("Resetting endpoint to the default [%s]", cli.Endpoint)
 		}
 
@@ -126,14 +205,14 @@ func (cli *Client) connect() {
 					}
 
 					cli.Endpoint = resp.Header.Get("Location")
-					retryStrategy.Reset()
+					retryWithContext.Reset()
 					return fmt.Errorf("Redirecting to %s", cli.Endpoint)
 				} else
 				// 4xx: Rejected by the server (validation)
 				if resp.StatusCode == 400 {
 					bytes, err := ioutil.ReadAll(resp.Body)
 					if err != nil {
-						return backoff.Permanent(fmt.Errorf("Unexpected error: %s", err))
+						return backoff.Permanent(fmt.Errorf("Failed to read response body: %s", err))
 					}
 					msg := string(bytes)
 					return backoff.Permanent(errors.New(msg))
@@ -146,7 +225,7 @@ func (cli *Client) connect() {
 				if resp.StatusCode >= 400 {
 					bytes, err := ioutil.ReadAll(resp.Body)
 					if err != nil {
-						return fmt.Errorf("Unexpected error: %s", err)
+						return fmt.Errorf("Failed to read response body: %s", err)
 					}
 					msg := string(bytes)
 					return errors.New(msg)
@@ -167,18 +246,20 @@ func (cli *Client) connect() {
 			return err
 		}
 
-		cli.conn = c
+		conn = c
 
 		return nil
-	}, retryStrategy, func(err error, duration time.Duration) {
-		log.WithError(err).Warnf("Failed to connect. Retrying in %s", duration)
+	}, retryWithContext, func(err error, duration time.Duration) {
+		log.Warnf("Failed to connect. Retrying in %s", duration)
 	})
+	close(backoffOver)
 
 	if err != nil {
 		log.WithError(err).Fatal("Failed to connect")
 	}
 
 	cli.Connected <- connectionInfo
+	return conn
 }
 
 func parseConnectionHeaders(header http.Header) (*ConnectionInfo, error) {
@@ -228,79 +309,62 @@ func parseConnectionHeaders(header http.Header) (*ConnectionInfo, error) {
 	return connectionInfo, nil
 }
 
-func (cli *Client) Start() {
-	cli.connect()
-	go cli.read()
-}
+func (cli *Client) readPump(conn *websocket.Conn) (doneReading chan error) {
+	doneReading = make(chan error)
 
-func (cli *Client) Stop() {
-	log.Info("Stopping websocket client...")
+	go func() {
+		defer close(doneReading)
 
-	// connection can be nil if we are trying to re-connect to the server
-	if cli.conn != nil {
+		for {
+			_, message, err := conn.ReadMessage()
 
-		// Cleanly close the connection by sending a close message and then
-		// waiting (with timeout) for the server to close the connection.
-		cli.sendMux.Lock()
-		err := cli.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-		cli.sendMux.Unlock()
-
-		if err != nil {
-			log.WithError(err).Error("Failed to gracefully disconnect")
-			return
-		}
-
-		// the `doneReading` channel is being closed by the read function
-		select {
-		case <-cli.DoneReading:
-		case <-time.After(3 * time.Second):
-			cli.clean()
-		}
-	}
-}
-
-func (cli *Client) clean() {
-	close(cli.DoneReading)
-	close(cli.Received)
-	close(cli.Connected)
-}
-
-func (cli *Client) read() {
-	defer cli.clean()
-
-	for {
-		_, message, err := cli.conn.ReadMessage()
-		// TODO: this deadline should be readjusted after V1
-		cli.conn.SetReadDeadline(time.Now().Add(18 * time.Minute))
-
-		if err != nil {
-			if e, ok := err.(*websocket.CloseError); ok && e.Code == websocket.CloseNormalClosure {
-				if e.Text != "" {
-					log.Warnf("Disconnection reason: %s", e.Text)
+			if err != nil {
+				// Graceful disconnection
+				if e, ok := err.(*websocket.CloseError); ok && e.Code == websocket.CloseNormalClosure {
+					if e.Text != "" {
+						log.Infof("Disconnection reason: %s", e.Text)
+					}
+				} else {
+					log.WithError(err).Error("Unexpected error reading from server")
+					doneReading <- err
 				}
-				// If it was a gracefull closure, exit the loop
-				break
+				return
 			}
-			log.WithError(err).Error("Unexpected failure to read from server")
-			cli.connect()
+			if len(message) > 0 {
+				cli.Receive <- message
+			}
 		}
-		if len(message) > 0 {
-			cli.Received <- message
-		}
-	}
+	}()
+
+	return doneReading
 }
 
-func (cli *Client) IsConnected() bool {
-	return cli.conn != nil
-}
+func (cli *Client) writePump(conn *websocket.Conn, stopWrite chan struct{}) {
+	go func() {
+		keepAliveTicker := time.NewTicker(pingInterval)
 
-func (cli *Client) Send(message []byte) {
-	cli.sendMux.Lock()
-	err := cli.conn.WriteMessage(websocket.BinaryMessage, message)
-	cli.sendMux.Unlock()
+		defer func() {
+			keepAliveTicker.Stop()
+		}()
 
-	if err != nil {
-		log.WithError(err).Error("Failure to send.")
-	}
+		for {
+			select {
+			case <-stopWrite:
+				return
+			case msg, ok := <-cli.Send:
+				if !ok {
+					return
+				}
+				err := conn.WriteMessage(websocket.BinaryMessage, msg)
+				if err != nil {
+					log.WithError(err).Error("Failed to send.")
+				}
 
+			case <-keepAliveTicker.C:
+				if err := conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(2*time.Second)); err != nil {
+					log.WithError(err).Error("Failed to ping server")
+				}
+			}
+		}
+	}()
 }
