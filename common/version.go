@@ -5,6 +5,6 @@ var Version string
 
 func init() {
 	if Version == "" {
-		Version = "v0.2.2"
+		Version = "v1.0.0"
 	}
 }
