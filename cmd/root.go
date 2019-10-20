@@ -57,5 +57,5 @@ func initConfig() {
 		viper.AddConfigPath(configFolderPath)
 	}
 
-	common.SetLogColor(logColor)
+	common.SetLogConfig(logColor)
 }
