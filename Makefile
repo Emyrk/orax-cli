@@ -13,14 +13,15 @@ LDFLAGS_STAGING := $(LDFLAGS) -X gitlab.com/oraxpool/orax-cli/api.oraxAPIBaseURL
 LDFLAGS_STAGING := $(LDFLAGS_STAGING) -X gitlab.com/oraxpool/orax-cli/ws.orchestratorURL=wss://orchestrator.staging.oraxpool.com/miner
 LDFLAGS_STAGING := $(LDFLAGS_STAGING)"
 
-prod: orax-cli-darwin-amd64 orax-cli-windows-amd64.exe orax-cli-linux-amd64 orax-cli-linux-arm64 orax-cli-linux-arm7
+prod: orax-cli-darwin-amd64 orax-cli-windows-amd64.exe orax-cli-linux-amd64 orax-cli-linux-arm64 orax-cli-linux-arm7 \
+orax-cli-darwin-amd64-go-1.12 orax-cli-windows-amd64.exe-go-1.12 orax-cli-linux-amd64-go-1.12 orax-cli-linux-arm64-go-1.12 orax-cli-linux-arm7-go-1.12
 staging: orax-cli-staging-darwin-amd64 orax-cli-staging-windows-amd64.exe orax-cli-staging-linux-amd64 orax-cli-staging-linux-arm64 orax-cli-staging-linux-arm7
 
 BUILD_FOLDER := "build"
 PROD_BUILD_FOLDER := "$(BUILD_FOLDER)/prod"
 STAGING_BUILD_FOLDER := "$(BUILD_FOLDER)/staging"
 
-# Prod targets
+# Prod targets built with latest go
 orax-cli-darwin-amd64:
 	env GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS_PROD) -o $(PROD_BUILD_FOLDER)/orax-cli-darwin-amd64-$(REVISION)
 	cp $(PROD_BUILD_FOLDER)/orax-cli-darwin-amd64-$(REVISION) $(PROD_BUILD_FOLDER)/orax-cli-darwin-amd64
@@ -36,6 +37,23 @@ orax-cli-linux-arm64:
 orax-cli-linux-arm7:
 	env GOOS=linux GOARCH=arm GOARM=7 go build -ldflags $(LDFLAGS_PROD) -o $(PROD_BUILD_FOLDER)/orax-cli-linux-arm7-$(REVISION)
 	cp $(PROD_BUILD_FOLDER)/orax-cli-linux-arm7-$(REVISION) $(PROD_BUILD_FOLDER)/orax-cli-linux-arm7
+
+# Prod targets built with go 1.12
+orax-cli-darwin-amd64-go-1.12:
+	env GOOS=darwin GOARCH=amd64 /usr/lib/go-1.12/bin/go build -ldflags $(LDFLAGS_PROD) -o $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-darwin-amd64-$(REVISION)
+	cp $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-darwin-amd64-$(REVISION) $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-darwin-amd64
+orax-cli-windows-amd64.exe-go-1.12:
+	env GOOS=windows GOARCH=amd64 /usr/lib/go-1.12/bin/go build -ldflags $(LDFLAGS_PROD) -o $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-windows-amd64-$(REVISION).exe
+	cp $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-windows-amd64-$(REVISION).exe $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-windows-amd64.exe
+orax-cli-linux-amd64-go-1.12:
+	env GOOS=linux GOARCH=amd64 /usr/lib/go-1.12/bin/go build -ldflags $(LDFLAGS_PROD) -o $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-amd64-$(REVISION)
+	cp $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-amd64-$(REVISION) $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-amd64
+orax-cli-linux-arm64-go-1.12:
+	env GOOS=linux GOARCH=arm64 /usr/lib/go-1.12/bin/go build -ldflags $(LDFLAGS_PROD) -o $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-arm64-$(REVISION)
+	cp $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-arm64-$(REVISION) $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-arm64
+orax-cli-linux-arm7-go-1.12:
+	env GOOS=linux GOARCH=arm GOARM=7 /usr/lib/go-1.12/bin/go build -ldflags $(LDFLAGS_PROD) -o $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-arm7-$(REVISION)
+	cp $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-arm7-$(REVISION) $(PROD_BUILD_FOLDER)/go-1.12/orax-cli-linux-arm7
 
 # Staging targets
 orax-cli-staging-darwin-amd64:
