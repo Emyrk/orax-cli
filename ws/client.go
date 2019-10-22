@@ -127,7 +127,7 @@ func (cli *Client) Start(stop <-chan struct{}) <-chan struct{} {
 				err := conn.WriteControl(
 					websocket.CloseMessage,
 					websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
-					time.Now().Add(2*time.Second),
+					time.Now().Add(10*time.Second),
 				)
 				close(stopWrite)
 				if err != nil {
@@ -361,7 +361,7 @@ func (cli *Client) writePump(conn *websocket.Conn, stopWrite chan struct{}) {
 				}
 
 			case <-keepAliveTicker.C:
-				if err := conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(2*time.Second)); err != nil {
+				if err := conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(10*time.Second)); err != nil {
 					log.WithError(err).Error("Failed to ping server")
 				}
 			}
