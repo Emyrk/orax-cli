@@ -157,6 +157,8 @@ github.com/pegnet/LXRHash v0.0.0-20190827131157-8ee2b6d50bde h1:AUkfV82awe1SnGfb
 github.com/pegnet/LXRHash v0.0.0-20190827131157-8ee2b6d50bde/go.mod h1:0zBp9GFy9F77zuQbPkAmdUBRiptMaJ1V96eVFdMnXZA=
 github.com/pegnet/LXRHash v0.0.0-20191010212656-6349ae0198e5 h1:UMTafHi4CD+FP33cP8l0UP+eY7DWe+GFcjH6n9BtPPc=
 github.com/pegnet/LXRHash v0.0.0-20191010212656-6349ae0198e5/go.mod h1:0zBp9GFy9F77zuQbPkAmdUBRiptMaJ1V96eVFdMnXZA=
+github.com/pegnet/LXRHash v0.0.0-20191028162532-138fe8d191a2 h1:ec8NDi02ydYYKw/RpzFZypAh8rvyxZAvkeVVDBo+lxA=
+github.com/pegnet/LXRHash v0.0.0-20191028162532-138fe8d191a2/go.mod h1:0zBp9GFy9F77zuQbPkAmdUBRiptMaJ1V96eVFdMnXZA=
 github.com/pegnet/OracleRecord v0.0.2/go.mod h1:VrY7Shn4oSCli47CsUYBFjH68IenGYtnLaXaaivepu4=
 github.com/pegnet/pegnet v0.0.2/go.mod h1:FUyEs8fyLOzPXZgyqXcqiOhQi58loNtujykIbxxoKbQ=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
