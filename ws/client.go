@@ -84,7 +84,7 @@ func NewWebSocketClient(nbSubMiners int) (cli *Client) {
 	cli.Connected = make(chan *ConnectionInfo)
 	cli.Disconnected = make(chan bool)
 	cli.Receive = make(chan []byte)
-	cli.Send = make(chan []byte)
+	cli.Send = make(chan []byte, 2)
 
 	return cli
 }
