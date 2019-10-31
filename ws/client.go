@@ -274,13 +274,11 @@ func parseConnectionHeaders(header http.Header) (*ConnectionInfo, error) {
 
 	// Target
 	targetStr := header.Get("Target")
-	if targetStr != "" {
-		target, err := strconv.ParseUint(targetStr, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to get target: %s", err)
-		}
-		connectionInfo.Target = target
+	target, err := strconv.ParseUint(targetStr, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get target: %s", err)
 	}
+	connectionInfo.Target = target
 
 	// BatchingDuration
 	bacthingDurationStr := header.Get("BatchingDuration")

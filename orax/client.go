@@ -15,7 +15,6 @@ import (
 	"gitlab.com/oraxpool/orax-message/msg/fbs"
 
 	"gitlab.com/oraxpool/orax-cli/mining"
-	"gitlab.com/oraxpool/orax-cli/miningv0"
 	"gitlab.com/oraxpool/orax-cli/ws"
 )
 
@@ -27,9 +26,6 @@ type Client struct {
 	wscli              *ws.Client
 	miner              *mining.SuperMiner
 	stopClaimingShares chan struct{}
-	minerV0            *miningv0.SuperMiner
-	// TODO: delete once swithced to v1
-	miningVersion byte
 
 	// Mining params
 	CurrentTarget     uint64
@@ -47,7 +43,6 @@ func (cli *Client) Start(config ClientConfig, stop <-chan struct{}) <-chan struc
 
 	// Initialize super miner
 	cli.miner = mining.NewSuperMiner(config.NbMiners)
-	cli.minerV0 = miningv0.NewSuperMiner(config.NbMiners)
 
 	if common.GetIndicativeHashRate(config.NbMiners) == 0 {
 		cli.benchHashRate()
@@ -85,12 +80,6 @@ func (cli *Client) run(stop <-chan struct{}) {
 			cli.CurrentTarget = coInfo.Target
 			cli.BatchingDuration = coInfo.BatchingDuration
 			cli.InitialBatchDelay = coInfo.InitialBatchDelay
-			if coInfo.Target > 0 {
-				cli.miningVersion = 1
-			} else {
-				cli.miningVersion = 0
-			}
-
 			log.WithField("params", coInfo).Info("Connected to Orax orchestrator")
 		case _, ok := <-cli.wscli.Disconnected:
 			if !ok {
@@ -103,16 +92,10 @@ func (cli *Client) run(stop <-chan struct{}) {
 			if cli.miner.IsRunning() {
 				cli.miner.Stop()
 			}
-			if cli.minerV0.IsRunning() {
-				cli.minerV0.Stop()
-			}
 		case <-stop:
 			// Stop mining and send results
-			if cli.miningVersion == 0 {
-				cli.submitMiningResultV0(time.Duration(0))
-			} else {
-				cli.submitMiningResult(time.Duration(0))
-			}
+			cli.submitMiningResult(time.Duration(0))
+
 			// Stop WS server
 			close(stopServer)
 			<-doneServer
@@ -129,9 +112,7 @@ func (cli *Client) handleMessage(received []byte) {
 	}
 
 	switch v := message.(type) {
-	// V1 messages
 	case *fbs.StartMiningMessage:
-		cli.miningVersion = 1
 		if cli.miner.IsRunning() {
 			log.Warn("Stopping a stalled mining session")
 			cli.miner.Stop()
@@ -139,32 +120,14 @@ func (cli *Client) handleMessage(received []byte) {
 		cli.startClaimingShareBatches()
 		cli.miner.Mine(v.OprHashBytes(), cli.NoncePrefix, cli.CurrentTarget)
 	case *fbs.SubmissionWindowClosingMessage:
-		cli.miningVersion = 1
 		cli.submitMiningResult(time.Duration(v.Deadline()) * time.Second)
 	case *fbs.SetTargetMessage:
-		cli.miningVersion = 1
 		cli.CurrentTarget = v.Target()
 		log.Infof("New target set: %d", cli.CurrentTarget)
-
-	// V0 messages
-	case *msg.MineSignalMessage:
-		cli.miningVersion = 0
-		if cli.minerV0.IsRunning() {
-			log.Warn("Stopping a stalled mining session")
-			cli.minerV0.Stop()
-		}
-		cli.minerV0.Mine(v.OprHash, cli.NoncePrefix, int(v.MaxNonces))
-	case *msg.SubmitSignalMessage:
-		cli.miningVersion = 0
-		cli.submitMiningResultV0(time.Duration(v.WindowDurationSec) * time.Second)
 	default:
 		log.Warnf("Unexpected message %T!\n", v)
 	}
 }
-
-///////////////
-// V1
-///////////////
 
 func (cli *Client) startClaimingShareBatches() {
 	cli.stopClaimingShareBatches()
@@ -275,68 +238,4 @@ func (cli *Client) benchHashRate() {
 		log.WithError(err).Fatal("Failed to save indicative hash rate")
 	}
 	log.Infof("Hash rate initially evaluated at %dh/s", common.GetIndicativeHashRate(cli.miner.SubMinerCount))
-}
-
-///////////////
-// V0
-///////////////
-
-func (cli *Client) submitMiningResultV0(windowDuration time.Duration) {
-	if cli.minerV0.IsRunning() {
-		ms := cli.minerV0.Stop()
-
-		msm := new(msg.MinerSubmissionMessage)
-		msm.OprHash = ms.OprHash
-
-		msm.Nonces = make([]msg.Nonce, len(ms.OrderedBestNonces))
-		for i, nonce := range ms.OrderedBestNonces {
-			msm.Nonces[i] = msg.Nonce{Nonce: nonce.Nonce, Difficulty: nonce.Difficulty}
-		}
-		msm.OpCount = ms.TotalOps
-		msm.Duration = ms.Duration.Nanoseconds()
-
-		data, err := msm.Marshal()
-		if err != nil {
-			log.WithError(err).Error("Failed to marshal MinerSubmissionMessage")
-		} else {
-			// Randomly delay the reply within acceptable time window
-			r := rand.New(rand.NewSource(time.Now().UnixNano()))
-			jitter := time.Duration(int64(float64(windowDuration.Nanoseconds()) / 2 * r.Float64()))
-			timer := time.NewTimer(jitter)
-			<-timer.C
-
-			select {
-			case cli.wscli.Send <- data:
-			default:
-				log.Error("Skipping sending mining result as Send channel is not available")
-			}
-
-			logMiningResult(&ms)
-		}
-
-		err = common.SaveIndicativeHashRate(cli.minerV0.SubMinerCount, ms.TotalOps, ms.Duration)
-		if err != nil {
-			log.WithError(err).Warn("Failed to save indicative hash rate")
-		}
-	}
-}
-
-func logMiningResult(ms *miningv0.MiningSession) {
-	nonces := make([]struct {
-		Nonce      []byte
-		Difficulty string
-	}, len(ms.OrderedBestNonces))
-
-	for i, nonce := range ms.OrderedBestNonces {
-		diffBuff := make([]byte, 8)
-		binary.BigEndian.PutUint64(diffBuff, nonce.Difficulty)
-		nonces[i].Nonce = nonce.Nonce
-		nonces[i].Difficulty = fmt.Sprintf("%x", diffBuff)
-	}
-
-	log.WithFields(logrus.Fields{
-		"nonces":   nonces,
-		"oprHash":  ms.OprHash,
-		"hashRate": int64(float64(ms.TotalOps) / ms.Duration.Seconds()),
-	}).Infof("Submitting mining result")
 }
