@@ -25,7 +25,7 @@ var (
 
 const (
 	redirectDurationLimit = 5 * time.Minute
-	pingInterval          = 30 * time.Second
+	pingInterval          = 45 * time.Second
 )
 
 func exponentialBackOff() *backoff.ExponentialBackOff {
@@ -359,7 +359,7 @@ func (cli *Client) writePump(conn *websocket.Conn, stopWrite chan struct{}) {
 				}
 
 			case <-keepAliveTicker.C:
-				if err := conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(10*time.Second)); err != nil {
+				if err := conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(15*time.Second)); err != nil {
 					log.WithError(err).Error("Failed to ping server")
 				}
 			}
