@@ -207,6 +207,7 @@ func (cli *Client) submitMiningResult(windowDuration time.Duration) {
 		if err != nil {
 			log.WithError(err).Warn("Failed to save indicative hash rate")
 		}
+		log.Info("Waiting for next mining session...")
 	}
 }
 

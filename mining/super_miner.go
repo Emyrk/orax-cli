@@ -84,7 +84,7 @@ func (sm *SuperMiner) Mine(oprHash []byte, noncePrefix []byte, target uint64) {
 		"oprHash":     oprHash,
 		"noncePrefix": noncePrefix,
 		"target":      fmt.Sprintf("%x", targetBuff),
-	}).Infof("Starting mining")
+	}).Infof("Starting mining session")
 }
 
 func (sm *SuperMiner) collectShares(c <-chan []byte) {
@@ -108,7 +108,6 @@ func (sm *SuperMiner) Stop() MiningSession {
 	if !sm.running {
 		log.Fatal("Tried to stop non-running miner")
 	}
-	log.Info("Stopping mining")
 
 	for i := 0; i < len(sm.miners); i++ {
 		sm.miners[i].stop <- 1
