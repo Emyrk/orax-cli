@@ -188,7 +188,9 @@ func (cli *Client) submitMiningResult(windowDuration time.Duration) {
 		if len(ms.NonceBuffer) > 0 {
 			// Randomly delay the reply within acceptable time window
 			r := rand.New(rand.NewSource(time.Now().UnixNano()))
-			jitter := time.Duration(int64(float64(windowDuration.Nanoseconds()) / 2 * r.Float64()))
+			maxDelay := math.Min(float64(windowDuration.Nanoseconds())/2, float64(4*time.Second.Nanoseconds()))
+			jitter := time.Duration(int64(maxDelay * r.Float64()))
+
 			timer := time.NewTimer(jitter)
 			<-timer.C
 
