@@ -13,8 +13,9 @@ LDFLAGS_STAGING := $(LDFLAGS) -X gitlab.com/oraxpool/orax-cli/api.oraxAPIBaseURL
 LDFLAGS_STAGING := $(LDFLAGS_STAGING) -X gitlab.com/oraxpool/orax-cli/ws.orchestratorURL=wss://orchestrator.staging.oraxpool.com/miner
 LDFLAGS_STAGING := $(LDFLAGS_STAGING)"
 
-prod: orax-cli-darwin-amd64 orax-cli-windows-amd64.exe orax-cli-windows-386.exe orax-cli-linux-amd64 orax-cli-linux-arm64 orax-cli-linux-arm7 \
-orax-cli-darwin-amd64-go-1.12 orax-cli-windows-amd64.exe-go-1.12 orax-cli-windows-386.exe-go-1.12 orax-cli-linux-amd64-go-1.12 orax-cli-linux-arm64-go-1.12 orax-cli-linux-arm7-go-1.12
+prod: prod-go-latest prod-go-1.12
+prod-go-latest: orax-cli-darwin-amd64 orax-cli-windows-amd64.exe orax-cli-windows-386.exe orax-cli-linux-amd64 orax-cli-linux-arm64 orax-cli-linux-arm7
+prod-go-1.12: orax-cli-darwin-amd64-go-1.12 orax-cli-windows-amd64.exe-go-1.12 orax-cli-windows-386.exe-go-1.12 orax-cli-linux-amd64-go-1.12 orax-cli-linux-arm64-go-1.12 orax-cli-linux-arm7-go-1.12
 staging: orax-cli-staging-darwin-amd64 orax-cli-staging-windows-amd64.exe orax-cli-staging-windows-386.exe orax-cli-staging-linux-amd64 orax-cli-staging-linux-arm64 orax-cli-staging-linux-arm7
 
 BUILD_FOLDER := build
