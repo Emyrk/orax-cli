@@ -17,6 +17,7 @@ var (
 func InitLXR() {
 	once.Do(func() {
 		log.Info("Initializing LXR hash...")
+		LX.Verbose(true)
 		LX.Init(0xfafaececfafaecec, 30, 256, 5)
 	})
 }
