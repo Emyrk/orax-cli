@@ -3,23 +3,17 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"net/mail"
 
 	"github.com/FactomProject/factom"
+	"github.com/goware/emailx"
 	"github.com/manifoldco/promptui"
 	"gitlab.com/oraxpool/orax-cli/api"
 )
 
 func askEmail() (email string, err error) {
 	prompt := promptui.Prompt{
-		Label: "Email address",
-		Validate: func(input string) error {
-			_, err := mail.ParseAddress(input)
-			if err != nil {
-				return errors.New("Invalid email address")
-			}
-			return nil
-		},
+		Label:    "Email address",
+		Validate: emailx.ValidateFast,
 	}
 
 	email, err = prompt.Run()

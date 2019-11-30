@@ -34,6 +34,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/google/flatbuffers v1.11.0
 	github.com/gorilla/websocket v1.4.1
+	github.com/goware/emailx v0.2.0
 	github.com/hashicorp/go-plugin v1.0.1 // indirect
 	github.com/howeyc/fsnotify v0.9.0 // indirect
 	github.com/manifoldco/promptui v0.3.2
