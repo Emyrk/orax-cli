@@ -2,6 +2,8 @@
 
 Source code of the official client for the [Orax PegNet mining pool](https://www.oraxpool.com).
 
+Pre-built binaries are available at https://docs.oraxpool.com/miners-tech/download-orax-cli.
+
 ## Build
 
 Cross compile the complete prod distribution:
