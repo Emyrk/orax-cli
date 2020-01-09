@@ -2,10 +2,15 @@ package mining
 
 import (
 	"encoding/binary"
+	"fmt"
 	"sync"
 
+	lxr "github.com/pegnet/LXRHash"
 	"gitlab.com/oraxpool/orax-cli/hash"
 )
+
+var _ = fmt.Printf
+var _ = lxr.Init
 
 type Miner struct {
 	id         int
@@ -31,51 +36,178 @@ func (miner *Miner) mine(oprHash []byte, noncePrefix []byte, target uint64, wg *
 	dataToMine := make([]byte, 32, 64)
 	copy(dataToMine, oprHash)
 
-	prefixLength := len(noncePrefix) + 1
+	//prefixLength := len(noncePrefix) + 1
 	// Pre allocate a large enough slice of memory
 	nonce := make([]byte, 0, 64)
 	// Append the noncePrefix of the super miner, the local prefix (miner id) and the first 0
 	nonce = append(nonce, noncePrefix...)
-	nonce = append(nonce, byte(miner.id), 0)
+	nonce = append(nonce, byte(miner.id))
+	ni := NewNonceIncrementer(nonce)
 
-mining:
-	for {
-		// Listen for end of mining signal
-		select {
-		case <-miner.stop:
-			break mining
-		default:
-		}
+	static := append(oprHash, append(noncePrefix, byte(miner.id))...)
+	//cache := hash.LX.Cache(static)
+	//var _ = cache
 
-		// Increment nonce
-		i := prefixLength
+	//func miningRoutine(lx *lxr.LXRHash, base []byte, id byte, batchsize int) {
+	//	var start uint32
+	//	batch := make([][]byte, batchsize)
+	//	buf := make([]byte, 4)
+	//	for {
+	//		for i := range batch {
+	//			batch[i] = []byte{id}
+	//			binary.BigEndian.PutUint32(buf, start+uint32(i))
+	//			batch[i] = append(batch[i], buf...)
+	//		}
+	//		start += uint32(batchsize)
+	//
+	//		results := lx.HashWork(base, batch)
+	//		for i := range results {
+	//			// do something with the result here
+	//			// nonce = batch[i]
+	//			// input = append(base, batch[i]...)
+	//			// hash = results[i]
+	//		}
+	//	}
+	//}
+
+	if false {
+	mining:
 		for {
-			nonce[i]++
-			// if it overflows
-			if nonce[i] == 0 {
-				i++
-				// If we reached the end of the slice, expand it
-				if i == len(nonce) {
-					nonce = append(nonce, 0)
-					break
-				}
-			} else {
-				break
+			// Listen for end of mining signal
+			select {
+			case <-miner.stop:
+				break mining
+			default:
+			}
+
+			// Increment nonce
+			//i := prefixLength
+			//for {
+			//	nonce[i]++
+			//	// if it overflows
+			//	if nonce[i] == 0 {
+			//		i++
+			//		// If we reached the end of the slice, expand it
+			//		if i == len(nonce) {
+			//			nonce = append(nonce, 0)
+			//			break
+			//		}
+			//	} else {
+			//		break
+			//	}
+			//}
+
+			changed := ni.NextNonce()
+
+			// Compute hash and difficulty
+			dataToHash := append(dataToMine, ni.Nonce...)
+			if changed == -1 {
+				//fmt.Println("cached")
+				//cache = hash.LX.Cache(dataToHash[:len(dataToHash)-1])
+			}
+			//h := cache.Hash(dataToHash)
+			h := hash.LX.Hash(dataToHash)
+			diff := computeDifficulty(h)
+			miner.opsCounter++
+
+			if diff >= target {
+				c <- copyNonce(ni.Nonce)
 			}
 		}
 
-		// Compute hash and difficulty
-		dataToHash := append(dataToMine, nonce...)
-		h := hash.Hash(dataToHash)
-		diff := computeDifficulty(h)
-		miner.opsCounter++
+		wg.Done()
+	} else {
+		var start uint32
+	miningBatch:
+		for {
+			// Listen for end of mining signal
+			select {
+			case <-miner.stop:
+				break miningBatch
+			default:
+			}
 
-		if diff >= target {
-			c <- copyNonce(nonce)
+			batchsize := 256
+			batch := make([][]byte, batchsize)
+
+			for i := range batch {
+				batch[i] = make([]byte, 4)
+				binary.BigEndian.PutUint32(batch[i], start+uint32(i))
+			}
+			start += uint32(batchsize)
+
+			results := hash.LX.HashWork(static, batch)
+			for i := range results {
+				// do something with the result here
+				// nonce = batch[i]
+				// input = append(base, batch[i]...)
+				// hash = results[i]
+				h := results[i]
+				diff := computeDifficulty(h)
+				miner.opsCounter++
+
+				if diff >= target {
+					c <- copyNonce(ni.Nonce)
+				}
+			}
+
+			//changed := ni.NextNonce()
+			//
+			//// Compute hash and difficulty
+			//dataToHash := append(dataToMine, ni.Nonce...)
+			//if changed == -1 {
+			//	//fmt.Println("cached")
+			//	//cache = hash.LX.Cache(dataToHash[:len(dataToHash)-1])
+			//}
+			////h := cache.Hash(dataToHash)
+			//h := hash.LX.Hash(dataToHash)
+			//diff := computeDifficulty(h)
+			//miner.opsCounter++
+			//
+			//if diff >= target {
+			//	c <- copyNonce(ni.Nonce)
+			//}
+		}
+
+		wg.Done()
+	}
+}
+
+// NonceIncrementer is just simple to increment nonces
+type NonceIncrementer struct {
+	Nonce          []byte
+	lastNonceByte  int
+	lastPrefixByte int
+}
+
+func NewNonceIncrementer(prefix []byte) *NonceIncrementer {
+	n := new(NonceIncrementer)
+
+	n.lastPrefixByte = len(prefix) - 1
+	n.Nonce = append(prefix, 0)
+	n.lastNonceByte = 1
+	return n
+}
+
+// NextNonce is just counting to get the next nonce. We preserve
+// the first byte, as that is our ID and give us our nonce space
+//	So []byte(ID, 255) -> []byte(ID, 1, 0) -> []byte(ID, 1, 1)
+func (i *NonceIncrementer) NextNonce() int {
+	idx := len(i.Nonce) - i.lastNonceByte
+	for {
+		i.Nonce[idx]++
+		if i.Nonce[idx] == 0 {
+			idx--
+			if idx == i.lastPrefixByte { // This is my prefix, don't touch it!
+				rest := append([]byte{1}, i.Nonce[i.lastPrefixByte+1:]...)
+				i.Nonce = append(i.Nonce[:i.lastPrefixByte+1], rest...)
+				return -1
+			}
+		} else {
+			break
 		}
 	}
-
-	wg.Done()
+	return idx
 }
 
 func copyNonce(nonce []byte) []byte {
