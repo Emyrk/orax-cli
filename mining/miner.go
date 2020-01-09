@@ -147,7 +147,7 @@ func (miner *Miner) mine(oprHash []byte, noncePrefix []byte, target uint64, wg *
 				miner.opsCounter++
 
 				if diff >= target {
-					c <- copyNonce(ni.Nonce)
+					c <- copyNonce(append(static[32:], batch[i]...))
 				}
 			}
 
