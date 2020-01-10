@@ -72,7 +72,7 @@ func (sm *SuperMiner) Mine(oprHash []byte, noncePrefix []byte, target uint64) {
 	for i := 0; i < len(sm.miners); i++ {
 		sm.miners[i].Reset()
 		wg.Add(1)
-		go sm.miners[i].mine(oprHash, noncePrefix, target, wg, sm.miningSession.sharesC)
+		go sm.miners[i].mine(oprHash, noncePrefix, target, wg, sm.miningSession.sharesC, -1)
 	}
 	sm.wg = wg
 
